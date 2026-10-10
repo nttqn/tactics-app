@@ -11,6 +11,7 @@ Widget _missionScreen(Progress progress, int index) {
     key: ValueKey(index),
     mapJson: generateMap(mission.spec),
     aiLevel: mission.level,
+    tutorial: index == 0,
     onPlayerWin: (days) => progress.recordWin(index, days),
     nextBuilder: index + 1 < campaign.length
         ? (_) => _missionScreen(progress, index + 1)

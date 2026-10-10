@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tactics_app/campaign/campaign.dart';
 import 'package:tactics_app/campaign/progress.dart';
+import 'package:tactics_app/editor/map_store.dart';
 import 'package:tactics_app/ui/game_screen.dart';
 import 'package:tactics_app/ui/home_screen.dart';
 
@@ -103,6 +104,78 @@ void main() {
       expect(progress.completed, 1);
     },
   );
+
+  Future<void> pumpHome(WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({});
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData.dark(useMaterial3: true),
+        home: const HomeScreen(),
+      ),
+    );
+  }
+
+  Future<void> settle(WidgetTester tester) async {
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+  }
+
+  testWidgets('the first mission coaches the player', (tester) async {
+    await pumpHome(tester);
+    await tester.tap(find.text('Campaign'));
+    await settle(tester);
+    await tester.tap(find.text(campaign.first.name));
+    await settle(tester);
+    expect(find.textContaining('Welcome, commander'), findsOneWidget);
+  });
+
+  testWidgets('how to play lists every unit', (tester) async {
+    await pumpHome(tester);
+    await tester.tap(find.text('How to play'));
+    await settle(tester);
+    await tester.scrollUntilVisible(find.text('Units'), 200);
+    await tester.scrollUntilVisible(find.text('Griffin'), 200);
+    await tester.scrollUntilVisible(find.text('Castle'), 200);
+  });
+
+  testWidgets('a new map opens in the editor and painting changes it', (
+    tester,
+  ) async {
+    await pumpHome(tester);
+    await tester.tap(find.text('Map editor'));
+    await settle(tester);
+    // The stored maps load asynchronously, then the button animates in.
+    await settle(tester);
+    await tester.tap(find.text('New map'));
+    await settle(tester);
+    await tester.tap(find.text('6 × 8'));
+    await settle(tester);
+    expect(find.text('Map 1'), findsOneWidget);
+    expect(find.text('Mirror'), findsOneWidget);
+
+    // An empty map cannot be played yet.
+    await tester.tap(find.byTooltip('Play test (2 players)'));
+    await settle(tester);
+    expect(find.text('Not ready to play'), findsOneWidget);
+    await tester.tap(find.text('OK'));
+    await settle(tester);
+
+    await tester.tap(find.byTooltip('forest'));
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('editor-board')));
+    await tester.pump();
+    await tester.pageBack();
+    await settle(tester);
+    expect(find.textContaining('Unfinished'), findsOneWidget);
+    final saved = (await MapStore.load()).maps.single;
+    // Mirror is on by default, so one tap paints two tiles.
+    final forests =
+        (saved.toJson()['terrain'] as List).join().split('f').length - 1;
+    expect(forests, 2);
+  });
 
   testWidgets('back button pauses instead of leaving', (tester) async {
     await pumpGame(tester);

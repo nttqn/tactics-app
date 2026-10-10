@@ -25,7 +25,12 @@ class GameScreen extends StatefulWidget {
     this.aiLevel,
     this.onPlayerWin,
     this.nextBuilder,
+    this.tutorial = false,
   });
+
+  /// Shows a coaching line under the board that follows what the player is
+  /// doing. Used for the first campaign mission.
+  final bool tutorial;
 
   final Map<String, dynamic> mapJson;
 
@@ -122,6 +127,7 @@ class _GameScreenState extends State<GameScreen> {
                   children: [
                     _statusBar(),
                     Expanded(child: GameWidget(game: _game)),
+                    if (widget.tutorial) _tutorialStrip(),
                     SizedBox(height: 112, child: _panel()),
                   ],
                 ),
@@ -133,6 +139,64 @@ class _GameScreenState extends State<GameScreen> {
       ),
     );
   }
+
+  /// The coaching line for the current situation, or null for none.
+  String? _tutorialTip() {
+    final c = _controller;
+    final s = c.state;
+    if (s.winner != null || c.aiTurn) return null;
+    switch (c.phase) {
+      case Phase.moving:
+        return 'Blue tiles show where this unit can go; red marks enemies '
+            'it could strike. Tap a blue tile. A grey village is a good goal.';
+      case Phase.menu:
+        if (c.canCapture) {
+          return 'Capture claims this building. It takes two turns, and '
+              'every building you own pays gold each day.';
+        }
+        return c.targets.isNotEmpty
+            ? 'Attack strikes an enemy in reach. Wait ends the move here.'
+            : 'Wait ends the move here. Stop on a building to capture it, '
+                  'or beside an enemy to attack.';
+      case Phase.targeting:
+        return 'The panel shows the damage you deal and take back. '
+            'Forests, mountains and buildings protect whoever stands there.';
+      case Phase.building:
+        return 'Spend gold to recruit. A new unit can act from your next '
+            'turn.';
+      case Phase.idle:
+        final mine = s.unitsOf(s.currentPlayer);
+        if (s.turn == 1 && mine.every((u) => !u.acted)) {
+          return 'Welcome, commander. Tap one of your blue shields to give '
+              'it orders.';
+        }
+        if (mine.any((u) => !u.acted)) {
+          return 'Each unit acts once per turn. Tap another shield, or '
+              'your striped tent to recruit.';
+        }
+        return 'Press End turn when you are done. Win by capturing the red '
+            'castle or defeating every red unit.';
+    }
+  }
+
+  // Fixed height so the board does not resize as tips come and go.
+  Widget _tutorialStrip() => Container(
+    height: 58,
+    width: double.infinity,
+    margin: const EdgeInsets.symmetric(horizontal: 8),
+    padding: const EdgeInsets.symmetric(horizontal: 10),
+    alignment: Alignment.centerLeft,
+    decoration: BoxDecoration(
+      color: const Color(0xFF2A3145),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Text(
+      _tutorialTip() ?? '',
+      maxLines: 3,
+      overflow: TextOverflow.ellipsis,
+      style: const TextStyle(fontSize: 13, color: Color(0xFFFFE9A8)),
+    ),
+  );
 
   Widget _statusBar() {
     final s = _controller.state;

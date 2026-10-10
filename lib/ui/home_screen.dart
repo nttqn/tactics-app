@@ -6,6 +6,8 @@ import '../ai/ai_player.dart';
 import '../core/map_generator.dart';
 import 'campaign_screen.dart';
 import 'game_screen.dart';
+import 'how_to_play_screen.dart';
+import 'my_maps_screen.dart';
 
 /// Mode select: campaign, a one-off battle against the computer on a random
 /// map, or two players on one device.
@@ -84,6 +86,14 @@ class HomeScreen extends StatelessWidget {
                 option(
                   '2 players, one device',
                   () => _open(context, _randomBattle(null)),
+                ),
+                option(
+                  'Map editor',
+                  () => _open(context, const MyMapsScreen()),
+                ),
+                option(
+                  'How to play',
+                  () => _open(context, const HowToPlayScreen()),
                 ),
               ],
             ),
