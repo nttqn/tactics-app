@@ -45,7 +45,21 @@ class GameController extends ChangeNotifier {
   Pos? buildAt;
 
   /// Called synchronously with the events of every applied action.
-  void Function(List<GameEvent> events)? onEvents;
+  final eventListeners = <void Function(List<GameEvent> events)>[];
+
+  /// Snapshots taken before each of the player's actions this turn.
+  final _history = <GameState>[];
+
+  bool get canUndo =>
+      _history.isNotEmpty && !paused && !aiTurn && state.winner == null;
+
+  /// Takes back the player's latest action of the current turn.
+  void undo() {
+    if (!canUndo) return;
+    state = _history.removeLast();
+    _clear();
+    notifyListeners();
+  }
 
   List<Pos> get previewPath =>
       destination == null ? const [] : moves!.pathTo(destination!);
@@ -164,6 +178,7 @@ class GameController extends ChangeNotifier {
 
   void restart() {
     _aiTimer?.cancel();
+    _history.clear();
     state = GameState.fromMap(mapJson);
     paused = false;
     _clear();
@@ -179,13 +194,21 @@ class GameController extends ChangeNotifier {
   /// A player-initiated action; ignored while input is locked.
   void _apply(GameAction action) {
     if (paused || aiTurn || state.winner != null) return;
+    if (action is EndTurnAction) {
+      _history.clear();
+    } else {
+      _history.add(state.copy());
+    }
     _perform(action);
+    if (state.winner != null) _history.clear();
   }
 
   void _perform(GameAction action) {
     final events = state.apply(action);
     _clear();
-    onEvents?.call(events);
+    for (final listener in eventListeners) {
+      listener(events);
+    }
     notifyListeners();
     _scheduleAi();
   }

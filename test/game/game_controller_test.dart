@@ -18,7 +18,7 @@ void main() {
   test('select, move, attack and confirm', () {
     final c = duel();
     final seen = <GameEvent>[];
-    c.onEvents = seen.addAll;
+    c.eventListeners.add(seen.addAll);
 
     c.tapTile(const Pos(0, 0));
     expect(c.phase, Phase.moving);
@@ -41,6 +41,28 @@ void main() {
     expect(c.state.unitById(0)!.pos, const Pos(2, 0));
     expect(c.state.unitById(1)!.hp, 51);
     expect(seen.whereType<UnitDamaged>(), hasLength(2));
+  });
+
+  test('undo takes back actions of the current turn only', () {
+    final c = duel();
+    expect(c.canUndo, isFalse);
+    c.tapTile(const Pos(0, 0));
+    c.tapTile(const Pos(2, 0));
+    c.chooseAttack();
+    c.confirmAttack();
+    expect(c.canUndo, isTrue);
+
+    c.undo();
+    expect(c.state.unitById(0)!.pos, const Pos(0, 0));
+    expect(c.state.unitById(0)!.acted, isFalse);
+    expect(c.state.unitById(1)!.hp, 100);
+    expect(c.canUndo, isFalse);
+
+    c.tapTile(const Pos(0, 0));
+    c.tapTile(const Pos(1, 0));
+    c.chooseWait();
+    c.endTurn();
+    expect(c.canUndo, isFalse);
   });
 
   test('cancel steps back one level at a time', () {

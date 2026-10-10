@@ -1,11 +1,14 @@
 import 'package:flame/game.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../ai/ai_player.dart';
+import '../core/actions.dart';
 import '../core/models.dart';
 import '../game/board_component.dart';
 import '../game/game_controller.dart';
 import '../game/tactics_game.dart';
+import '../services/sound_service.dart';
 
 const _playerNames = ['Blue', 'Red'];
 
@@ -46,6 +49,8 @@ class _GameScreenState extends State<GameScreen> {
   );
   late final _game = TacticsGame(_controller);
   bool _resultReported = false;
+  Phase _lastPhase = Phase.idle;
+  bool _soundPlayed = false;
 
   bool get _playerWon =>
       widget.aiLevel != null && _controller.state.winner == 0;
@@ -53,7 +58,20 @@ class _GameScreenState extends State<GameScreen> {
   @override
   void initState() {
     super.initState();
+    SoundService.instance.startGameMusic();
+    _controller.eventListeners.add(_playEventSound);
     _controller.addListener(() {
+      // Stepping deeper into a selection clicks, backing out of it thuds;
+      // applied actions have already made their own sound.
+      final phase = _controller.phase;
+      if (_soundPlayed) {
+        _soundPlayed = false;
+      } else if (phase.index > _lastPhase.index) {
+        SoundService.instance.play(SoundEffect.click);
+      } else if (phase.index < _lastPhase.index) {
+        SoundService.instance.play(SoundEffect.back);
+      }
+      _lastPhase = phase;
       if (_controller.state.winner == null) {
         _resultReported = false;
       } else if (!_resultReported) {
@@ -63,8 +81,24 @@ class _GameScreenState extends State<GameScreen> {
     });
   }
 
+  void _playEventSound(List<GameEvent> events) {
+    _soundPlayed = true;
+    final SoundEffect effect;
+    if (events.any((e) => e is GameOver)) {
+      effect = widget.aiLevel == null || _playerWon
+          ? SoundEffect.win
+          : SoundEffect.hit;
+    } else if (events.any((e) => e is UnitDamaged)) {
+      effect = SoundEffect.hit;
+    } else {
+      effect = SoundEffect.click;
+    }
+    SoundService.instance.play(effect);
+  }
+
   @override
   void dispose() {
+    SoundService.instance.playMenuMusic();
     _controller.dispose();
     super.dispose();
   }
@@ -194,6 +228,7 @@ class _GameScreenState extends State<GameScreen> {
         case Phase.idle:
           children = [
             _hint('Tap one of your units, or your barracks to recruit.'),
+            if (c.canUndo) _button('Undo', c.undo, primary: false),
             _button('End turn', c.endTurn),
           ];
         case Phase.moving:
@@ -270,6 +305,22 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
+  Widget _soundToggle(
+    ValueListenable<bool> enabled,
+    IconData on,
+    IconData off,
+    String tooltip,
+    VoidCallback toggle,
+  ) => ValueListenableBuilder(
+    valueListenable: enabled,
+    builder: (context, value, _) => IconButton(
+      tooltip: tooltip,
+      iconSize: 32,
+      icon: Icon(value ? on : off),
+      onPressed: toggle,
+    ),
+  );
+
   Widget _pauseOverlay() {
     return Positioned.fill(
       child: ColoredBox(
@@ -296,6 +347,26 @@ class _GameScreenState extends State<GameScreen> {
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
                 child: const Text('Quit to menu'),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _soundToggle(
+                    SoundService.instance.musicEnabled,
+                    Icons.music_note,
+                    Icons.music_off,
+                    'Music',
+                    SoundService.instance.toggleMusic,
+                  ),
+                  _soundToggle(
+                    SoundService.instance.sfxEnabled,
+                    Icons.volume_up,
+                    Icons.volume_off,
+                    'Sound effects',
+                    SoundService.instance.toggleSfx,
+                  ),
+                ],
               ),
             ],
           ),
