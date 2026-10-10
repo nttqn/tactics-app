@@ -43,6 +43,7 @@ class AiPlayer {
 
     final objectives = _assignObjectives(s, me, ready);
     final threats = _caution == 0 ? const <_Threat>[] : _threats(s, me);
+    _guardTile = level == AiLevel.easy ? null : _hqToGuard(s, me);
     UnitAction? best;
     var bestScore = double.negativeInfinity;
     void consider(UnitAction action, double score) {
@@ -76,6 +77,22 @@ class AiPlayer {
       }
     }
     return best!;
+  }
+
+  /// Our HQ, when an enemy that can capture it is close. A unit standing on
+  /// the HQ makes it impossible to take.
+  Pos? _guardTile;
+
+  Pos? _hqToGuard(GameState s, int me) {
+    for (final entry in s.owners.entries) {
+      if (entry.value != me || s.terrainAt(entry.key) != Terrain.hq) continue;
+      final hq = entry.key;
+      final threatened = s
+          .unitsOf(1 - me)
+          .any((e) => e.type.canCapture && e.pos.distanceTo(hq) <= 5);
+      return threatened ? hq : null;
+    }
+    return null;
   }
 
   double _captureValue(GameState s, Unit unit, Pos to) {
@@ -123,6 +140,7 @@ class AiPlayer {
     if (unit.type.moveClass != MoveClass.flying) value += terrain.defense * 2;
     // Keep our own barracks free so it can recruit.
     if (terrain == Terrain.barracks && s.owners[to] == unit.owner) value -= 25;
+    if (to == _guardTile) value += 200;
     if (threats.isNotEmpty) {
       final moved = unit.copy()..pos = to;
       var damage = 0;
@@ -310,10 +328,7 @@ class AiPlayer {
       if (wanted.cost <= funds + income && mine.length >= enemies.length) {
         return null;
       }
-      return BuildAction(
-        entry.key,
-        ranked.firstWhere((t) => t.cost <= funds),
-      );
+      return BuildAction(entry.key, ranked.firstWhere((t) => t.cost <= funds));
     }
     return null;
   }

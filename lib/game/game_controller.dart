@@ -134,9 +134,7 @@ class GameController extends ChangeNotifier {
 
   void confirmAttack() {
     if (target == null) return;
-    _apply(
-      UnitAction(selected!.id, destination!, ActionKind.attack, target),
-    );
+    _apply(UnitAction(selected!.id, destination!, ActionKind.attack, target));
   }
 
   void build(UnitType type) => _apply(BuildAction(buildAt!, type));

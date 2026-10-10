@@ -351,7 +351,10 @@ class BoardComponent extends PositionComponent with TapCallbacks {
     final c = Offset((at.dx + 0.5) * tile, (at.dy + 0.5) * tile);
     final spent = unit.acted && unit.owner == s.currentPlayer;
     final base = playerColors[unit.owner];
-    _fill(canvas, spent ? Color.lerp(base, const Color(0xFF555555), 0.6)! : base);
+    _fill(
+      canvas,
+      spent ? Color.lerp(base, const Color(0xFF555555), 0.6)! : base,
+    );
     canvas.drawCircle(c, 23, _paint);
     _paint
       ..style = PaintingStyle.stroke

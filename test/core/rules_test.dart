@@ -42,20 +42,23 @@ void main() {
       expect(xs(s.reachable(s.units.first).destinations), {0, 1, 2});
     });
 
-    test('mountain blocks mounted, water blocks ground, flyers ignore both', () {
-      final s = state(
-        ['.^.~.', '.....'],
-        [u('knight', 0, 0, 0), u('infantry', 0, 2, 0), u('griffin', 0, 4, 1)],
-      );
-      final knight = s.reachable(s.units[0]);
-      expect(knight.cost.containsKey(const Pos(1, 0)), isFalse);
-      final infantry = s.reachable(s.units[1]);
-      expect(infantry.cost.containsKey(const Pos(3, 0)), isFalse);
-      expect(infantry.cost[const Pos(1, 0)], 3);
-      final griffin = s.reachable(s.units[2]);
-      expect(griffin.cost[const Pos(3, 0)], 2);
-      expect(griffin.cost[const Pos(1, 0)], 4);
-    });
+    test(
+      'mountain blocks mounted, water blocks ground, flyers ignore both',
+      () {
+        final s = state(
+          ['.^.~.', '.....'],
+          [u('knight', 0, 0, 0), u('infantry', 0, 2, 0), u('griffin', 0, 4, 1)],
+        );
+        final knight = s.reachable(s.units[0]);
+        expect(knight.cost.containsKey(const Pos(1, 0)), isFalse);
+        final infantry = s.reachable(s.units[1]);
+        expect(infantry.cost.containsKey(const Pos(3, 0)), isFalse);
+        expect(infantry.cost[const Pos(1, 0)], 3);
+        final griffin = s.reachable(s.units[2]);
+        expect(griffin.cost[const Pos(3, 0)], 2);
+        expect(griffin.cost[const Pos(1, 0)], 4);
+      },
+    );
 
     test('enemies block, friends can be passed but not stopped on', () {
       final blocked = state(

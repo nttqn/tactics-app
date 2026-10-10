@@ -18,7 +18,8 @@ class Pos {
   ];
 
   @override
-  bool operator ==(Object other) => other is Pos && other.x == x && other.y == y;
+  bool operator ==(Object other) =>
+      other is Pos && other.x == x && other.y == y;
 
   @override
   int get hashCode => x * 1000 + y;
@@ -73,7 +74,13 @@ enum Terrain {
 enum UnitType {
   infantry(cost: 100, move: 3, moveClass: MoveClass.foot, canCapture: true),
   spearman(cost: 200, move: 3, moveClass: MoveClass.foot, canCapture: true),
-  archer(cost: 300, move: 3, moveClass: MoveClass.foot, minRange: 2, maxRange: 2),
+  archer(
+    cost: 300,
+    move: 3,
+    moveClass: MoveClass.foot,
+    minRange: 2,
+    maxRange: 2,
+  ),
   knight(cost: 500, move: 5, moveClass: MoveClass.mounted),
   catapult(
     cost: 600,

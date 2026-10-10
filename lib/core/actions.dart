@@ -57,7 +57,12 @@ class UnitDamaged extends GameEvent {
   final int defenderId;
   final int damage;
   final bool isCounter;
-  const UnitDamaged(this.attackerId, this.defenderId, this.damage, {this.isCounter = false});
+  const UnitDamaged(
+    this.attackerId,
+    this.defenderId,
+    this.damage, {
+    this.isCounter = false,
+  });
 }
 
 class UnitDied extends GameEvent {

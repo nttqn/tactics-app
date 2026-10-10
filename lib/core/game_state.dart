@@ -74,7 +74,9 @@ class GameState {
   factory GameState.fromMap(Map<String, dynamic> json) {
     final rows = (json['terrain'] as List).cast<String>();
     if (rows.isEmpty || rows.any((r) => r.length != rows.first.length)) {
-      throw const FormatException('Terrain rows must be non-empty and equal length');
+      throw const FormatException(
+        'Terrain rows must be non-empty and equal length',
+      );
     }
     final width = rows.first.length;
     final terrain = [

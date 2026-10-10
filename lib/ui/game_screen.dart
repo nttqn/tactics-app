@@ -16,12 +16,24 @@ extension on UnitType {
 /// A full match: status bar, board and a context panel for the current
 /// selection. Two players share the device.
 class GameScreen extends StatefulWidget {
-  const GameScreen({super.key, required this.mapJson, this.aiLevel});
+  const GameScreen({
+    super.key,
+    required this.mapJson,
+    this.aiLevel,
+    this.onPlayerWin,
+    this.nextBuilder,
+  });
 
   final Map<String, dynamic> mapJson;
 
   /// Difficulty of the computer opponent, or null for two players.
   final AiLevel? aiLevel;
+
+  /// Called once with the day count when the human beats the computer.
+  final void Function(int days)? onPlayerWin;
+
+  /// Screen offered as "Next" after such a win.
+  final WidgetBuilder? nextBuilder;
 
   @override
   State<GameScreen> createState() => _GameScreenState();
@@ -33,6 +45,23 @@ class _GameScreenState extends State<GameScreen> {
     ai: widget.aiLevel == null ? null : AiPlayer(widget.aiLevel!),
   );
   late final _game = TacticsGame(_controller);
+  bool _resultReported = false;
+
+  bool get _playerWon =>
+      widget.aiLevel != null && _controller.state.winner == 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(() {
+      if (_controller.state.winner == null) {
+        _resultReported = false;
+      } else if (!_resultReported) {
+        _resultReported = true;
+        if (_playerWon) widget.onPlayerWin?.call(_controller.state.turn);
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -91,7 +120,11 @@ class _GameScreenState extends State<GameScreen> {
               fit: BoxFit.scaleDown,
               child: Text(
                 s.winner != null
-                    ? '${_playerNames[s.winner!]} wins'
+                    ? widget.aiLevel == null
+                          ? '${_playerNames[s.winner!]} wins'
+                          : _playerWon
+                          ? 'Victory on day ${s.turn}'
+                          : 'Defeated on day ${s.turn}'
                     : _controller.aiTurn
                     ? 'Day ${s.turn} · ${_playerNames[1]} is moving…'
                     : 'Day ${s.turn} · ${_playerNames[s.currentPlayer]} to move',
@@ -142,9 +175,17 @@ class _GameScreenState extends State<GameScreen> {
     final s = c.state;
     final List<Widget> children;
     if (s.winner != null) {
+      final next = _playerWon ? widget.nextBuilder : null;
       children = [
-        _hint('${_playerNames[s.winner!]} wins on day ${s.turn}.'),
-        _button('Play again', c.restart),
+        if (next != null)
+          _button(
+            'Next',
+            () => Navigator.of(
+              context,
+            ).pushReplacement(MaterialPageRoute<void>(builder: next)),
+          ),
+        _button('Play again', c.restart, primary: next == null),
+        _button('Menu', () => Navigator.of(context).pop(), primary: false),
       ];
     } else if (c.aiTurn) {
       children = [_hint('The enemy is taking its turn.')];
@@ -173,8 +214,7 @@ class _GameScreenState extends State<GameScreen> {
           ];
         case Phase.targeting:
           final f = c.forecast;
-          final lethal =
-              f != null && f.damage >= s.unitAt(c.target!)!.hp;
+          final lethal = f != null && f.damage >= s.unitAt(c.target!)!.hp;
           children = [
             _hint(
               f == null

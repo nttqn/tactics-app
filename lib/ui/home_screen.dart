@@ -1,38 +1,65 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import '../ai/ai_player.dart';
+import '../core/map_generator.dart';
+import 'campaign_screen.dart';
 import 'game_screen.dart';
 
-/// Mode select: one of three computer opponents, or two players.
+/// Mode select: campaign, a one-off battle against the computer on a random
+/// map, or two players on one device.
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key, required this.mapJson});
+  const HomeScreen({super.key});
 
-  final Map<String, dynamic> mapJson;
+  void _open(BuildContext context, Widget screen) {
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen));
+  }
 
-  void _start(BuildContext context, AiLevel? level) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => GameScreen(mapJson: mapJson, aiLevel: level),
+  Widget _randomBattle(AiLevel? level) => GameScreen(
+    mapJson: generateMap(MapSpec(seed: Random().nextInt(1 << 20))),
+    aiLevel: level,
+  );
+
+  Future<void> _pickSkirmish(BuildContext context) async {
+    final level = await showModalBottomSheet<AiLevel>(
+      context: context,
+      builder: (sheet) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text('Choose the computer\'s skill'),
+            ),
+            for (final level in AiLevel.values)
+              ListTile(
+                title: Text(
+                  level.name[0].toUpperCase() + level.name.substring(1),
+                ),
+                onTap: () => Navigator.of(sheet).pop(level),
+              ),
+          ],
+        ),
       ),
     );
+    if (level != null && context.mounted) _open(context, _randomBattle(level));
   }
 
   @override
   Widget build(BuildContext context) {
-    Widget option(String label, AiLevel? level) => Padding(
+    Widget option(
+      String label,
+      VoidCallback onPressed, {
+      bool primary = false,
+    }) => Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: SizedBox(
         width: 240,
         height: 52,
-        child: level == null
-            ? OutlinedButton(
-                onPressed: () => _start(context, level),
-                child: Text(label),
-              )
-            : FilledButton(
-                onPressed: () => _start(context, level),
-                child: Text(label),
-              ),
+        child: primary
+            ? FilledButton(onPressed: onPressed, child: Text(label))
+            : OutlinedButton(onPressed: onPressed, child: Text(label)),
       ),
     );
     return Scaffold(
@@ -47,14 +74,17 @@ class HomeScreen extends StatelessWidget {
                   'Tactics',
                   style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 8),
-                const Text('Play against the computer'),
-                const SizedBox(height: 24),
-                option('Easy', AiLevel.easy),
-                option('Normal', AiLevel.normal),
-                option('Hard', AiLevel.hard),
-                const SizedBox(height: 12),
-                option('2 players, one device', null),
+                const SizedBox(height: 32),
+                option(
+                  'Campaign',
+                  () => _open(context, const CampaignScreen()),
+                  primary: true,
+                ),
+                option('Skirmish', () => _pickSkirmish(context)),
+                option(
+                  '2 players, one device',
+                  () => _open(context, _randomBattle(null)),
+                ),
               ],
             ),
           ),
