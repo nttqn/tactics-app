@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'services/ads_service.dart';
 import 'services/sound_service.dart';
@@ -7,6 +8,8 @@ import 'ui/theme.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  // The board and HUD are laid out for a tall screen.
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   // Not awaited: a slow or broken audio asset must never delay the first frame.
   SoundService.instance.init();
   SoundService.instance.playMenuMusic();

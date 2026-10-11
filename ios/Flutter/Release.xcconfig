@@ -1,1 +1,4 @@
 #include "Generated.xcconfig"
+// Required by google_mobile_ads under CocoaPods; the pod targets get the
+// same setting from the Podfile patch in the CI workflow.
+CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES
