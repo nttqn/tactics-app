@@ -115,19 +115,17 @@ jobs:
           perl -0777 -pi -e "s/(flutter_additional_ios_build_settings\(target\))/\$1\n    target.build_configurations.each do |config|\n      config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'\n    end/" ios/Podfile
           grep -n "CLANG_ALLOW_NON_MODULAR" ios/Podfile
 
-      # The repo's Info.plist carries Google's public iOS test App ID so the
-      # ads SDK does not crash on launch. A real one replaces it here once
-      # an iOS app exists in AdMob.
-      - name: Set the AdMob App ID
+      # ios/Runner/Info.plist already carries Marchlords' iOS AdMob App ID
+      # (not secret; it ships in the app). The optional ADMOB_APP_ID_IOS
+      # secret overrides it.
+      - name: Override the AdMob App ID
         env:
           ADMOB_APP_ID_IOS: ${{ secrets.ADMOB_APP_ID_IOS }}
         run: |
           set -e
-          if [ -z "${ADMOB_APP_ID_IOS}" ]; then
-            echo "::warning::ADMOB_APP_ID_IOS secret not set, keeping the public iOS TEST AdMob App ID. iOS shows test ads only."
-            exit 0
+          if [ -n "${ADMOB_APP_ID_IOS}" ]; then
+            plutil -replace GADApplicationIdentifier -string "$ADMOB_APP_ID_IOS" ios/Runner/Info.plist
           fi
-          plutil -replace GADApplicationIdentifier -string "$ADMOB_APP_ID_IOS" ios/Runner/Info.plist
 
       # Automatic signing does not work in headless CI with no device, so
       # this uses manual signing: an Apple Distribution certificate (.p12)

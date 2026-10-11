@@ -4,8 +4,9 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 /// AdMob banner + interstitial.
 ///
 /// Android uses Marchlords' own ad units; its App ID is set in
-/// android/app/build.gradle.kts. iOS still uses Google's public test units
-/// and test App ID (ios/Runner/Info.plist) until an iOS app exists in AdMob.
+/// android/app/build.gradle.kts. iOS has its own App ID in
+/// ios/Runner/Info.plist but still uses Google's public test units until
+/// iOS ad units are created in AdMob.
 ///
 /// `google_mobile_ads` only supports Android/iOS, so everything here is a
 /// no-op elsewhere, which keeps `flutter run -d chrome` and tests working.
