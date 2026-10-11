@@ -380,26 +380,29 @@ class _GameScreenState extends State<GameScreen> {
         children: [
           funds(0),
           Expanded(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                s.winner != null
-                    ? widget.aiLevel == null
-                          ? '${_playerNames[s.winner!]} wins'
-                          : _playerWon
-                          ? 'Victory on day ${s.turn}'
-                          : 'Defeated on day ${s.turn}'
-                    : _controller.aiTurn
-                    ? 'Day ${s.turn} · ${_playerNames[1]} is moving…'
-                    : 'Day ${s.turn} · ${_playerNames[s.currentPlayer]} to move',
-                style: TextStyle(
-                  fontFamily: displayFont,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color.lerp(
-                    playerColors[s.winner ?? s.currentPlayer],
-                    Colors.white,
-                    0.35,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  s.winner != null
+                      ? widget.aiLevel == null
+                            ? '${_playerNames[s.winner!]} wins'
+                            : _playerWon
+                            ? 'Victory on day ${s.turn}'
+                            : 'Defeated on day ${s.turn}'
+                      : _controller.aiTurn
+                      ? 'Day ${s.turn} · ${_playerNames[1]} is moving…'
+                      : 'Day ${s.turn} · ${_playerNames[s.currentPlayer]} to move',
+                  style: TextStyle(
+                    fontFamily: displayFont,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color.lerp(
+                      playerColors[s.winner ?? s.currentPlayer],
+                      Colors.white,
+                      0.35,
+                    ),
                   ),
                 ),
               ),
@@ -468,7 +471,7 @@ class _GameScreenState extends State<GameScreen> {
       switch (c.phase) {
         case Phase.idle:
           children = [
-            _hint('Tap one of your units, or your barracks to recruit.'),
+            _hint('Tap one of your units, or your tent to recruit.'),
             if (c.canUndo) _button('Undo', c.undo, primary: false),
             if (c.canUsePower)
               _button(s.commanders[s.currentPlayer]!.power, _confirmPower),

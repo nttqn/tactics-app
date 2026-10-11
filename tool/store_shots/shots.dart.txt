@@ -1,0 +1,146 @@
+// Temporary entry point for store screenshots; not part of the app.
+// Build with: flutter build web --release -t lib/shots.dart
+// then open /?shot=<name>.
+import 'dart:convert';
+import 'dart:math';
+
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'ai/ai_player.dart';
+import 'campaign/campaign.dart';
+import 'core/actions.dart';
+import 'core/game_state.dart';
+import 'core/map_generator.dart';
+import 'core/models.dart';
+import 'core/rules.dart';
+import 'editor/editable_map.dart';
+import 'editor/map_store.dart';
+import 'ui/achievements_screen.dart';
+import 'ui/campaign_screen.dart';
+import 'ui/editor_screen.dart';
+import 'ui/game_screen.dart';
+import 'ui/home_screen.dart';
+import 'ui/theme.dart';
+
+/// Plays the computer against itself until blue's turn on [day].
+GameState? _midGame(Map<String, dynamic> setup, int day, int seed) {
+  final s = GameState.fromMap(setup);
+  final players = [
+    AiPlayer(AiLevel.hard, random: Random(seed)),
+    AiPlayer(AiLevel.hard, random: Random(seed + 77)),
+  ];
+  while (s.winner == null) {
+    final action = players[s.currentPlayer].nextAction(s);
+    s.apply(action);
+    if (action is EndTurnAction && s.currentPlayer == 0 && s.turn >= day) {
+      return s;
+    }
+  }
+  return null;
+}
+
+/// A blue move-then-attack available in [s], for the script to tap through.
+UnitAction? _attack(GameState s) {
+  UnitAction? best;
+  for (final a in s.legalActions().whereType<UnitAction>()) {
+    if (a.kind != ActionKind.attack) continue;
+    final unit = s.unitById(a.unitId)!;
+    if (a.to == unit.pos) continue;
+    // Prefer showy attackers.
+    if (best == null || unit.type.cost > s.unitById(best.unitId)!.type.cost) {
+      best = a;
+    }
+  }
+  return best;
+}
+
+Widget _battle({required int mission, required int day, required bool fog}) {
+  final setup = missionSetup(mission, Commander.bold);
+  for (var seed = 0; seed < 40; seed++) {
+    final s = _midGame(setup, day, seed);
+    if (s == null || s.units.length < 10) continue;
+    final attack = _attack(s);
+    if (attack == null && !fog) continue;
+    s.charge[0] = Commander.maxCharge;
+    final unit = attack == null ? null : s.unitById(attack.unitId)!;
+    // ignore: avoid_print
+    print(
+      'SHOT:${jsonEncode({
+        'w': s.width,
+        'h': s.height,
+        if (attack != null) ...{
+          'unit': [unit!.pos.x, unit.pos.y],
+          'to': [attack.to.x, attack.to.y],
+          'target': [attack.target!.x, attack.target!.y],
+          'single': s.attackTargets(unit, attack.to).length == 1,
+        },
+      })}',
+    );
+    return GameScreen(
+      mapJson: setup,
+      aiLevel: AiLevel.hard,
+      resumeFrom: s,
+      missionIndex: mission,
+    );
+  }
+  return const Center(child: Text('no suitable position found'));
+}
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final shot = Uri.base.queryParameters['shot'] ?? 'home';
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.clear();
+  await prefs.setInt('campaign_completed', 9);
+  await prefs.setStringList('campaign_best_days', [
+    '6', '9', '13', '8', '12', '15', '13', '10', '21', //
+    for (var i = 9; i < campaign.length; i++) '',
+  ]);
+  await prefs.setStringList('achievements', [
+    'first_blood',
+    'castle',
+    'total_war',
+    'landlord',
+    'veteran',
+    'medic',
+    'unleashed',
+    'blitz',
+    'mist',
+  ]);
+  final custom = EditableMap.fromJson({
+    ...generateMap(
+      const MapSpec(
+        seed: 31,
+        width: 7,
+        height: 10,
+        bridges: 3,
+        citiesPerSide: 3,
+      ),
+    ),
+    'name': 'Three Bridges',
+  });
+  await prefs.setStringList('custom_maps', [jsonEncode(custom.toJson())]);
+
+  final Widget home = switch (shot) {
+    'campaign' => const CampaignScreen(),
+    'achievements' => const AchievementsScreen(),
+    'editor' => FutureBuilder(
+      future: MapStore.load(),
+      builder: (context, snapshot) => snapshot.hasData
+          ? EditorScreen(store: snapshot.data!, map: snapshot.data!.maps.first)
+          : const SizedBox.shrink(),
+    ),
+    'battle' => _battle(mission: 13, day: 8, fog: false),
+    'fog' => _battle(mission: 12, day: 5, fog: true),
+    _ => const HomeScreen(),
+  };
+  runApp(
+    MaterialApp(
+      title: 'Marchlords',
+      debugShowCheckedModeBanner: false,
+      theme: buildTheme(),
+      home: home,
+    ),
+  );
+}

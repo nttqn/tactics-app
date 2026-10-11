@@ -177,6 +177,7 @@ class _EditorScreenState extends State<EditorScreen> {
     Widget side(String label, int? owner, Color color) => Padding(
       padding: const EdgeInsets.only(right: 6),
       child: ChoiceChip(
+        visualDensity: VisualDensity.compact,
         label: Text(label),
         avatar: Icon(Icons.circle, size: 14, color: color),
         showCheckmark: false,
@@ -184,15 +185,16 @@ class _EditorScreenState extends State<EditorScreen> {
         onSelected: (_) => setState(() => _owner = owner),
       ),
     );
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
+    return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Row(
+      child: Wrap(
+        alignment: WrapAlignment.center,
         children: [
           side('Blue', 0, playerColors[0]),
           side('Red', 1, playerColors[1]),
           side('Neutral', null, const Color(0xFFB8B2A7)),
           FilterChip(
+            visualDensity: VisualDensity.compact,
             label: const Text('Mirror'),
             tooltip: 'Copy every change to the other side for the other player',
             selected: _mirror,
