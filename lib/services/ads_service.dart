@@ -3,10 +3,9 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 /// AdMob banner + interstitial.
 ///
-/// Android uses Marchlords' own ad units; its App ID is set in
-/// android/app/build.gradle.kts. iOS has its own App ID in
-/// ios/Runner/Info.plist but still uses Google's public test units until
-/// iOS ad units are created in AdMob.
+/// Each platform has Marchlords' own ad units, since AdMob units are
+/// platform-specific. The App IDs live outside this file: Android's in
+/// android/app/build.gradle.kts, iOS's in ios/Runner/Info.plist.
 ///
 /// `google_mobile_ads` only supports Android/iOS, so everything here is a
 /// no-op elsewhere, which keeps `flutter run -d chrome` and tests working.
@@ -21,12 +20,12 @@ class AdsService {
 
   static String get bannerAdUnitId =>
       defaultTargetPlatform == TargetPlatform.iOS
-      ? 'ca-app-pub-3940256099942544/2934735716'
+      ? 'ca-app-pub-9078637596840810/6671864833'
       : 'ca-app-pub-9078637596840810/9444708696';
 
   static String get interstitialAdUnitId =>
       defaultTargetPlatform == TargetPlatform.iOS
-      ? 'ca-app-pub-3940256099942544/4411468910'
+      ? 'ca-app-pub-9078637596840810/6049048302'
       : 'ca-app-pub-9078637596840810/5301360260';
 
   /// Becomes true once the SDK has started; nothing loads before that.
