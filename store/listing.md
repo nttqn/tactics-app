@@ -7,7 +7,20 @@ description 80, full description 4000.
 
 ### Title
 
-Marchlords
+- App Store: Marchlords: Castle Tactics (the plain name "Marchlords" was
+  already taken there)
+- Google Play: Marchlords, or the App Store name for consistency
+
+### App Store subtitle (30 characters)
+
+Medieval turn-based strategy
+
+### App Store keywords (100 characters)
+
+strategy,tactics,turn based,medieval,war,knight,castle,army,battle,campaign,offline,wargame,griffin
+
+The App Store rejects some non-ASCII characters in text fields; the English
+texts in this file are plain ASCII.
 
 ### Short description
 
