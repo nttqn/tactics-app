@@ -2,6 +2,8 @@ import 'package:flame/game.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import 'theme.dart';
+
 import '../ai/ai_player.dart';
 import '../core/actions.dart';
 import '../core/game_state.dart';
@@ -229,7 +231,6 @@ class _GameScreenState extends State<GameScreen> {
         if (!didPop) _controller.togglePause();
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFF1B1F2A),
         body: SafeArea(
           child: ListenableBuilder(
             listenable: _controller,
@@ -237,10 +238,17 @@ class _GameScreenState extends State<GameScreen> {
               children: [
                 Column(
                   children: [
-                    _statusBar(),
+                    DecoratedBox(
+                      decoration: hudDecoration(trimOnTop: false),
+                      child: _statusBar(),
+                    ),
                     Expanded(child: GameWidget(game: _game)),
                     if (widget.tutorial) _tutorialStrip(),
-                    SizedBox(height: 112, child: _panel()),
+                    Container(
+                      height: 112,
+                      decoration: hudDecoration(trimOnTop: true),
+                      child: _panel(),
+                    ),
                   ],
                 ),
                 if (_curtain) _curtainOverlay(),
@@ -300,14 +308,15 @@ class _GameScreenState extends State<GameScreen> {
     padding: const EdgeInsets.symmetric(horizontal: 10),
     alignment: Alignment.centerLeft,
     decoration: BoxDecoration(
-      color: const Color(0xFF2A3145),
+      color: parchment,
       borderRadius: BorderRadius.circular(8),
+      border: Border.all(color: goldDark, width: 2),
     ),
     child: Text(
       _tutorialTip() ?? '',
       maxLines: 3,
       overflow: TextOverflow.ellipsis,
-      style: const TextStyle(fontSize: 13, color: Color(0xFFFFE9A8)),
+      style: const TextStyle(fontSize: 13, color: Color(0xFF3A2A1C)),
     ),
   );
 
@@ -383,9 +392,14 @@ class _GameScreenState extends State<GameScreen> {
                     ? 'Day ${s.turn} · ${_playerNames[1]} is moving…'
                     : 'Day ${s.turn} · ${_playerNames[s.currentPlayer]} to move',
                 style: TextStyle(
+                  fontFamily: displayFont,
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: playerColors[s.winner ?? s.currentPlayer],
+                  color: Color.lerp(
+                    playerColors[s.winner ?? s.currentPlayer],
+                    Colors.white,
+                    0.35,
+                  ),
                 ),
               ),
             ),
@@ -592,7 +606,12 @@ class _GameScreenState extends State<GameScreen> {
             children: [
               const Text(
                 'Paused',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontFamily: displayFont,
+                  fontSize: 30,
+                  fontWeight: FontWeight.bold,
+                  color: gold,
+                ),
               ),
               const SizedBox(height: 24),
               FilledButton(

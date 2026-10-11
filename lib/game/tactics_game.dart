@@ -11,7 +11,7 @@ class TacticsGame extends FlameGame {
   final GameController controller;
 
   @override
-  Color backgroundColor() => const Color(0xFF1B1F2A);
+  Color backgroundColor() => const Color(0xFF21170F);
 
   @override
   Future<void> onLoad() async {

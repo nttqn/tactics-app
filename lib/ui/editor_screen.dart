@@ -124,10 +124,8 @@ class _EditorScreenState extends State<EditorScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1B1F2A),
       appBar: AppBar(
         title: Text(_map.name),
-        backgroundColor: const Color(0xFF1B1F2A),
         actions: [
           IconButton(
             tooltip: 'Rename',

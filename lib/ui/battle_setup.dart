@@ -46,7 +46,12 @@ Future<BattleSetup?> showBattleSetup(
         Widget commanderRow(int player, String label) => Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: TextStyle(color: playerColors[player])),
+            Text(
+              label,
+              style: TextStyle(
+                color: Color.lerp(playerColors[player], Colors.white, 0.45),
+              ),
+            ),
             const SizedBox(height: 6),
             Wrap(
               spacing: 6,

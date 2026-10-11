@@ -12,6 +12,8 @@ import 'campaign_screen.dart';
 import 'game_screen.dart';
 import 'how_to_play_screen.dart';
 import 'my_maps_screen.dart';
+import 'theme.dart';
+import 'title_backdrop.dart';
 
 /// Mode select: continue a saved match, campaign, a one-off battle against
 /// the computer on a random map, two players on one device, and extras.
@@ -100,41 +102,72 @@ class _HomeScreenState extends State<HomeScreen> {
     );
     return Scaffold(
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Tactics',
-                  style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 32),
-                FutureBuilder(
-                  future: _saved,
-                  builder: (context, snapshot) {
-                    final saved = snapshot.data;
-                    if (saved == null) return const SizedBox.shrink();
-                    return option(
-                      'Continue',
-                      () => _continue(saved),
-                      primary: true,
-                      subtitle: '${saved.label} · day ${saved.state.turn}',
-                    );
-                  },
-                ),
-                option('Campaign', () => _open(const CampaignScreen())),
-                option('Skirmish', () => _randomBattle(vsComputer: true)),
-                option(
-                  '2 players, one device',
-                  () => _randomBattle(vsComputer: false),
-                ),
-                option('Map editor', () => _open(const MyMapsScreen())),
-                option('Achievements', () => _open(const AchievementsScreen())),
-                option('How to play', () => _open(const HowToPlayScreen())),
-              ],
+        child: Column(
+          children: [
+            SizedBox(
+              height: 230,
+              width: double.infinity,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  const ClipRect(child: TitleBackdrop()),
+                  const Align(
+                    alignment: Alignment(0.75, -0.55),
+                    child: Text(
+                      'TACTICS',
+                      style: TextStyle(
+                        fontFamily: displayFont,
+                        fontSize: 40,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 3,
+                        color: gold,
+                        shadows: [Shadow(color: Colors.black, blurRadius: 10)],
+                      ),
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Container(height: 3, color: goldDark),
+                  ),
+                ],
+              ),
             ),
-          ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    FutureBuilder(
+                      future: _saved,
+                      builder: (context, snapshot) {
+                        final saved = snapshot.data;
+                        if (saved == null) return const SizedBox.shrink();
+                        return option(
+                          'Continue',
+                          () => _continue(saved),
+                          primary: true,
+                          subtitle: '${saved.label} · day ${saved.state.turn}',
+                        );
+                      },
+                    ),
+                    option('Campaign', () => _open(const CampaignScreen())),
+                    option('Skirmish', () => _randomBattle(vsComputer: true)),
+                    option(
+                      '2 players, one device',
+                      () => _randomBattle(vsComputer: false),
+                    ),
+                    option('Map editor', () => _open(const MyMapsScreen())),
+                    option(
+                      'Achievements',
+                      () => _open(const AchievementsScreen()),
+                    ),
+                    option('How to play', () => _open(const HowToPlayScreen())),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

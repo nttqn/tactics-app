@@ -25,6 +25,16 @@ class HowToPlayScreen extends StatelessWidget {
     'Recruit new units at your tent. They can act from your next turn.',
     'A wounded unit hits more weakly. The defender strikes back if the '
         'attacker is within its range.',
+    'Monks cannot fight; they restore 3 HP to an ally beside them.',
+    'A unit that defeats an enemy gains a rank, up to three. Each rank adds '
+        '10% damage.',
+    'Fighting fills your commander\'s meter. When it is full, tap the '
+        'commander badge or the power button to unleash it once.',
+    'Under fog of war you only see what your units and buildings see. '
+        'Hidden enemies cannot be targeted, and walking into one ends the '
+        'move in an ambush. Undo is off under fog.',
+    'Your current battle is saved after every move; pick it up again with '
+        'Continue on the main menu.',
   ];
 
   /// The two unit types [type] damages most, as a readable list.
@@ -40,7 +50,9 @@ class HowToPlayScreen extends StatelessWidget {
     type.minRange == type.maxRange
         ? 'Range ${type.maxRange}'
         : 'Range ${type.minRange}-${type.maxRange}',
+    'Sight ${type.vision}',
     if (type.canCapture) 'captures',
+    if (type.canHeal) 'heals allies',
     if (type.moveClass == MoveClass.flying) 'flies over anything',
     if (type.siege) 'cannot move and attack, never strikes back',
   ].join(' · ');
@@ -72,11 +84,7 @@ class HowToPlayScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final heading = Theme.of(context).textTheme.titleLarge;
     return Scaffold(
-      backgroundColor: const Color(0xFF1B1F2A),
-      appBar: AppBar(
-        title: const Text('How to play'),
-        backgroundColor: const Color(0xFF1B1F2A),
-      ),
+      appBar: AppBar(title: const Text('How to play')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -92,10 +100,23 @@ class HowToPlayScreen extends StatelessWidget {
               contentPadding: EdgeInsets.zero,
               leading: UnitIcon(type, size: 44),
               title: Text(_title(type.name)),
+              // A unit that cannot attack has no "best against" line.
               subtitle: Text(
-                '${_unitNotes(type)}\nBest against: ${_strongAgainst(type)}',
+                type.canAttack
+                    ? '${_unitNotes(type)}\n'
+                          'Best against: ${_strongAgainst(type)}'
+                    : _unitNotes(type),
               ),
               isThreeLine: true,
+            ),
+          const SizedBox(height: 8),
+          Text('Commanders', style: heading),
+          for (final commander in Commander.values)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: CircleAvatar(child: Text(commander.title[0])),
+              title: Text(commander.title),
+              subtitle: Text('${commander.power}: ${commander.description}'),
             ),
           const SizedBox(height: 8),
           Text('Terrain', style: heading),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'services/sound_service.dart';
 import 'ui/home_screen.dart';
+import 'ui/theme.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,7 +20,7 @@ class TacticsApp extends StatelessWidget {
     return MaterialApp(
       title: 'Tactics',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark(useMaterial3: true),
+      theme: buildTheme(),
       home: const HomeScreen(),
     );
   }

@@ -105,10 +105,8 @@ class _MyMapsScreenState extends State<MyMapsScreen> {
       builder: (context, snapshot) {
         final store = snapshot.data;
         return Scaffold(
-          backgroundColor: const Color(0xFF1B1F2A),
           appBar: AppBar(
             title: const Text('My maps'),
-            backgroundColor: const Color(0xFF1B1F2A),
             actions: [
               if (store != null)
                 IconButton(
