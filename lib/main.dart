@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'services/ads_service.dart';
 import 'services/sound_service.dart';
 import 'ui/home_screen.dart';
 import 'ui/theme.dart';
@@ -9,6 +10,7 @@ void main() {
   // Not awaited: a slow or broken audio asset must never delay the first frame.
   SoundService.instance.init();
   SoundService.instance.playMenuMusic();
+  AdsService.instance.initialize();
   runApp(const TacticsApp());
 }
 

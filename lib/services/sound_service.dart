@@ -4,7 +4,7 @@ import 'package:flame_audio/flame_audio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-enum SoundEffect { hit, win, click, back }
+enum SoundEffect { attack, defeat, win, click, back }
 
 /// Music + one-shot effects via `flame_audio`.
 ///
@@ -34,7 +34,8 @@ class SoundService {
   ];
 
   static const Map<SoundEffect, String> _files = {
-    SoundEffect.hit: 'sfx_explosive.wav',
+    SoundEffect.attack: 'sfx_attack.mp3',
+    SoundEffect.defeat: 'sfx_explosive.wav',
     SoundEffect.win: 'm_win.mp3',
     SoundEffect.click: 'sfx_menu_confirm.wav',
     SoundEffect.back: 'sfx_menu_back.wav',

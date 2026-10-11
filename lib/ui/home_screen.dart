@@ -1,9 +1,11 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import '../campaign/progress.dart';
 import '../core/map_generator.dart';
+import '../services/ads_service.dart';
 import '../services/save_service.dart';
 import '../services/sound_service.dart';
 import 'achievements_screen.dart';
@@ -26,6 +28,33 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   Future<SavedMatch?> _saved = SaveService.load();
+  BannerAd? _banner;
+  bool _bannerLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // The ads SDK starts up in the background; ask for a banner once it is
+    // ready, which may already be the case.
+    AdsService.instance.ready.addListener(_loadBanner);
+    _loadBanner();
+  }
+
+  void _loadBanner() {
+    if (_banner != null || !AdsService.instance.ready.value) return;
+    _banner = AdsService.instance.createBannerAd(
+      onLoaded: () {
+        if (mounted) setState(() => _bannerLoaded = true);
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    AdsService.instance.ready.removeListener(_loadBanner);
+    _banner?.dispose();
+    super.dispose();
+  }
 
   /// Opens [screen] and refreshes the Continue button when it closes.
   Future<void> _open(Widget screen) async {
@@ -175,6 +204,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
+            if (_bannerLoaded && _banner != null)
+              SizedBox(
+                width: _banner!.size.width.toDouble(),
+                height: _banner!.size.height.toDouble(),
+                child: AdWidget(ad: _banner!),
+              ),
           ],
         ),
       ),

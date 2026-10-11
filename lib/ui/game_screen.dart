@@ -13,6 +13,7 @@ import '../game/board_component.dart';
 import '../game/game_controller.dart';
 import '../game/tactics_game.dart';
 import '../services/achievements.dart';
+import '../services/ads_service.dart';
 import '../services/save_service.dart';
 import '../services/sound_service.dart';
 
@@ -205,9 +206,9 @@ class _GameScreenState extends State<GameScreen> {
     if (events.any((e) => e is GameOver)) {
       effect = widget.aiLevel == null || _playerWon
           ? SoundEffect.win
-          : SoundEffect.hit;
+          : SoundEffect.defeat;
     } else if (events.any((e) => e is UnitDamaged)) {
-      effect = SoundEffect.hit;
+      effect = SoundEffect.attack;
     } else {
       effect = SoundEffect.click;
     }
@@ -446,14 +447,20 @@ class _GameScreenState extends State<GameScreen> {
       final next = _playerWon ? widget.nextBuilder : null;
       children = [
         if (next != null)
-          _button(
-            'Next',
-            () => Navigator.of(
+          _button('Next', () {
+            AdsService.instance.maybeShowInterstitial();
+            Navigator.of(
               context,
-            ).pushReplacement(MaterialPageRoute<void>(builder: next)),
-          ),
-        _button('Play again', c.restart, primary: next == null),
-        _button('Menu', () => Navigator.of(context).pop(), primary: false),
+            ).pushReplacement(MaterialPageRoute<void>(builder: next));
+          }),
+        _button('Play again', () {
+          AdsService.instance.maybeShowInterstitial();
+          c.restart();
+        }, primary: next == null),
+        _button('Menu', () {
+          AdsService.instance.maybeShowInterstitial();
+          Navigator.of(context).pop();
+        }, primary: false),
       ];
     } else if (c.aiTurn) {
       children = [_hint('The enemy is taking its turn.')];
@@ -628,7 +635,10 @@ class _GameScreenState extends State<GameScreen> {
               ),
               const SizedBox(height: 12),
               TextButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () {
+                  AdsService.instance.maybeShowInterstitial();
+                  Navigator.of(context).pop();
+                },
                 child: const Text('Quit to menu'),
               ),
               const SizedBox(height: 12),
