@@ -3,10 +3,9 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 /// AdMob banner + interstitial.
 ///
-/// The unit IDs below are Google's public test units, so every ad shown is
-/// a labelled test ad. Replace them with Marchlords' own units before a
-/// store release. The Android App ID is already the real one, set in
-/// android/app/build.gradle.kts.
+/// Android uses Marchlords' own ad units; its App ID is set in
+/// android/app/build.gradle.kts. iOS still uses Google's public test units
+/// and test App ID (ios/Runner/Info.plist) until an iOS app exists in AdMob.
 ///
 /// `google_mobile_ads` only supports Android/iOS, so everything here is a
 /// no-op elsewhere, which keeps `flutter run -d chrome` and tests working.
@@ -22,12 +21,12 @@ class AdsService {
   static String get bannerAdUnitId =>
       defaultTargetPlatform == TargetPlatform.iOS
       ? 'ca-app-pub-3940256099942544/2934735716'
-      : 'ca-app-pub-3940256099942544/6300978111';
+      : 'ca-app-pub-9078637596840810/9444708696';
 
   static String get interstitialAdUnitId =>
       defaultTargetPlatform == TargetPlatform.iOS
       ? 'ca-app-pub-3940256099942544/4411468910'
-      : 'ca-app-pub-3940256099942544/1033173712';
+      : 'ca-app-pub-9078637596840810/5301360260';
 
   /// Becomes true once the SDK has started; nothing loads before that.
   final ValueNotifier<bool> ready = ValueNotifier(false);
