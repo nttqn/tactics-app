@@ -10,7 +10,11 @@ How the images under `store/` were made.
    - `node store_shots.js <repo>/store/phone 360 720 3` (1080 x 2160)
    - `node store_shots.js <repo>/store/tablet-7in 600 960 2` (1200 x 1920)
    - `node store_shots.js <repo>/store/tablet-10in 800 1280 2` (1600 x 2560)
-4. Delete `lib/shots.dart` again.
+   - `node store_shots.js <repo>/store/iphone-6.3in 402 874 3` (1206 x 2622)
+   - `node store_shots.js <repo>/store/ipad-13in 1032 1376 2` (2064 x 2752)
+4. For the App Store sets, strip the alpha channel, which Apple does not
+   accept: `ffmpeg -i in.png -pix_fmt rgb24 out.png`.
+5. Delete `lib/shots.dart` again.
 
 `shots.dart` seeds saved progress and plays the computer against itself to
 reach a mid-battle position, then prints the tiles for the script to tap.
