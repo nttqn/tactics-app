@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marchlords — medieval turn-based tactics</title>
+<meta name="description" content="Marchlords: a medieval turn-based tactics game. Capture villages, raise an army and storm the enemy castle. 20-mission campaign, skirmish, two players and a map editor.">
+<link rel="icon" href="img/icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    margin: 0;
+    color: #f2e6cc;
+    background: #21170f;
+    line-height: 1.55;
+  }
+  .display { font-family: Cinzel, Georgia, "Times New Roman", serif; }
+  header { text-align: center; background: #14101c; border-bottom: 3px solid #8a6427; }
+  .hero { display: block; width: 100%; max-width: 1024px; margin: 0 auto; }
+  .intro { padding: 28px 20px 40px; background: linear-gradient(#2a1e14, #21170f); }
+  .badge {
+    width: 104px;
+    height: 104px;
+    border-radius: 24px;
+    border: 3px solid #8a6427;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6);
+    display: block;
+    margin: -80px auto 16px;
+    position: relative;
+  }
+  h1 { font-size: 38px; letter-spacing: 3px; margin: 0 0 10px; color: #e2b55a; }
+  .tagline { font-size: 17px; max-width: 560px; margin: 0 auto; color: #e3d5b8; }
+  .stores { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-top: 26px; }
+  .store-btn {
+    display: inline-block;
+    border: 2px solid #8a6427;
+    background: #e2b55a;
+    color: #21170f;
+    text-decoration: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 15px;
+  }
+  .store-btn.disabled { background: #34261a; color: #b9a988; pointer-events: none; }
+  main { max-width: 1000px; margin: 0 auto; padding: 44px 16px 64px; }
+  h2 { font-size: 24px; text-align: center; margin: 0 0 26px; color: #e2b55a; letter-spacing: 1px; }
+  .shots {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-bottom: 60px;
+  }
+  @media (max-width: 720px) { .shots { grid-template-columns: repeat(2, 1fr); gap: 14px; } }
+  figure { margin: 0; }
+  .shots img {
+    width: 100%;
+    display: block;
+    border-radius: 14px;
+    border: 2px solid #5a4326;
+    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.55);
+  }
+  figcaption { color: #cdbd9c; font-size: 14px; text-align: center; margin-top: 8px; }
+  .features { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; margin-bottom: 56px; }
+  @media (max-width: 640px) { .features { grid-template-columns: 1fr; } }
+  .feature { background: #34261a; border: 1px solid #5a4326; border-radius: 10px; padding: 20px; }
+  .feature h3 { margin: 0 0 8px; font-size: 17px; color: #e2b55a; }
+  .feature p { margin: 0; color: #e3d5b8; font-size: 14.5px; }
+  .units { list-style: none; padding: 0; margin: 0 auto; max-width: 640px; }
+  .units li { padding: 10px 0; border-bottom: 1px solid #3f2f1f; font-size: 15px; color: #e3d5b8; }
+  .units li:last-child { border-bottom: none; }
+  .units strong { color: #f2e6cc; }
+  footer { text-align: center; padding: 26px 20px 46px; color: #b9a988; font-size: 14px; border-top: 1px solid #3f2f1f; }
+  footer a { color: #e2b55a; }
+</style>
+</head>
+<body>
+
+<header>
+  <img class="hero" src="img/hero.jpg" alt="Marchlords: a castle at dusk, with a blue army facing a red army">
+  <div class="intro">
+    <img class="badge" src="img/icon.png" alt="Marchlords icon">
+    <h1 class="display">MARCHLORDS</h1>
+    <p class="tagline">A medieval turn-based tactics game. Capture villages for gold, raise an
+    army, and storm the enemy castle before they storm yours.</p>
+    <div class="stores">
+      <a class="store-btn disabled" href="#" aria-disabled="true">Coming soon on Google Play</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="shots">
+    <figure>
+      <img src="img/battle.jpg" alt="A battle in progress: a knight is selected and the tiles it can reach are highlighted">
+      <figcaption>Pick a unit and see everywhere it can go.</figcaption>
+    </figure>
+    <figure>
+      <img src="img/attack.jpg" alt="A knight about to attack an archer, with the damage shown before confirming">
+      <figcaption>No dice: the damage is shown before you strike.</figcaption>
+    </figure>
+    <figure>
+      <img src="img/fog.jpg" alt="A battle under fog of war, with only the area around the blue army visible">
+      <figcaption>Fog of war hides what your troops cannot see.</figcaption>
+    </figure>
+    <figure>
+      <img src="img/campaign.jpg" alt="The campaign mission list with star ratings">
+      <figcaption>A 20-mission campaign with stars to earn.</figcaption>
+    </figure>
+    <figure>
+      <img src="img/commanders.jpg" alt="The battle setup sheet: enemy skill, commander and fog of war">
+      <figcaption>Choose your commander before each battle.</figcaption>
+    </figure>
+    <figure>
+      <img src="img/editor.jpg" alt="The map editor with terrain and unit tools">
+      <figcaption>Paint your own battlefields in the map editor.</figcaption>
+    </figure>
+  </div>
+
+  <h2 class="display">How it plays</h2>
+  <div class="features">
+    <div class="feature">
+      <h3>Turn by turn</h3>
+      <p>Blue and Red take turns. Each unit moves once, then attacks, captures or waits. Win by
+      capturing the enemy castle or defeating every enemy unit.</p>
+    </div>
+    <div class="feature">
+      <h3>Gold and recruits</h3>
+      <p>Infantry and spearmen capture villages. Every building you hold pays gold each day,
+      which you spend at your tent on new units.</p>
+    </div>
+    <div class="feature">
+      <h3>Terrain matters</h3>
+      <p>Forests, mountains and buildings protect whoever stands on them. Rivers can only be
+      crossed at bridges, unless you have wings.</p>
+    </div>
+    <div class="feature">
+      <h3>Commanders</h3>
+      <p>Fighting fills your commander's meter. When it is full, unleash a power once: heal your
+      army, strike harder for a turn, or march farther.</p>
+    </div>
+    <div class="feature">
+      <h3>Four ways to play</h3>
+      <p>The campaign, skirmishes on random maps against an Easy, Normal or Hard computer, two
+      players on one device, and maps you build yourself.</p>
+    </div>
+    <div class="feature">
+      <h3>Stop any time</h3>
+      <p>Your battle is saved after every move. You can undo actions until you end your turn,
+      and no account is needed.</p>
+    </div>
+  </div>
+
+  <h2 class="display">Seven units</h2>
+  <ul class="units">
+    <li><strong>Infantry</strong>: cheap, and they capture buildings.</li>
+    <li><strong>Spearmen</strong>: stop knights, and capture buildings too.</li>
+    <li><strong>Archers</strong>: strike from two tiles away and bring down griffins.</li>
+    <li><strong>Knights</strong>: fast and hard-hitting.</li>
+    <li><strong>Catapults</strong>: long range, but they cannot move and fire in the same turn.</li>
+    <li><strong>Griffins</strong>: fly over rivers and mountains.</li>
+    <li><strong>Monks</strong>: heal the ally beside them.</li>
+  </ul>
+</main>
+
+<footer>
+  <a href="support.html">Support</a> · <a href="privacy.html">Privacy Policy</a>
+</footer>
+
+</body>
+</html>
