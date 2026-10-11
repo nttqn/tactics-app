@@ -34,11 +34,11 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        // The AdMob App ID is not secret (it ships in every APK), but it is
-        // set from CI so the default here can stay Google's public test ID.
+        // Marchlords' AdMob App ID. It is not secret (it ships in every
+        // APK), so it lives here; the ADMOB_APP_ID variable can override it.
         manifestPlaceholders["admobAppId"] =
             System.getenv("ADMOB_APP_ID")?.takeIf { it.isNotBlank() }
-                ?: "ca-app-pub-3940256099942544~3347511713"
+                ?: "ca-app-pub-9078637596840810~5277223813"
     }
 
     signingConfigs {

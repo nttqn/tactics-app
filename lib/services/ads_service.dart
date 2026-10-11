@@ -5,8 +5,8 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 ///
 /// The unit IDs below are Google's public test units, so every ad shown is
 /// a labelled test ad. Replace them with Marchlords' own units before a
-/// store release; the Android App ID comes from the ADMOB_APP_ID variable
-/// at build time (see android/app/build.gradle.kts).
+/// store release. The Android App ID is already the real one, set in
+/// android/app/build.gradle.kts.
 ///
 /// `google_mobile_ads` only supports Android/iOS, so everything here is a
 /// no-op elsewhere, which keeps `flutter run -d chrome` and tests working.

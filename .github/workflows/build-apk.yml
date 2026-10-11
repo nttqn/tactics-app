@@ -50,8 +50,8 @@ jobs:
           printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=%s\nstoreFile=upload-keystore.jks\n' \
             "$KEYSTORE_PASSWORD" "$KEY_PASSWORD" "$KEY_ALIAS" > android/key.properties
 
-      # ADMOB_APP_ID is optional; without it the build uses Google's public
-      # test App ID and shows test ads only.
+      # ADMOB_APP_ID is optional; without it the build uses the App ID set
+      # in android/app/build.gradle.kts.
       - name: Build release APK
         env:
           ADMOB_APP_ID: ${{ secrets.ADMOB_APP_ID }}
