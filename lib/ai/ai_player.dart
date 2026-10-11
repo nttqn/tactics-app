@@ -40,6 +40,9 @@ class AiPlayer {
         if (!u.acted) u,
     ];
     if (ready.isEmpty) return _chooseBuild(s, me) ?? const EndTurnAction();
+    if (s.canUsePower && _wantsPower(s, me, ready)) {
+      return const UsePowerAction();
+    }
 
     final objectives = _assignObjectives(s, me, ready);
     final threats = _caution == 0 ? const <_Threat>[] : _threats(s, me);
@@ -74,9 +77,27 @@ class AiPlayer {
             position * 0.5 + _attackValue(s, unit, to, target),
           );
         }
+        for (final ally in s.healTargets(unit, to)) {
+          final restored = min(UnitType.healAmount, 100 - ally.hp);
+          consider(
+            UnitAction(unit.id, to, ActionKind.heal, ally.pos),
+            position + restored / 100 * ally.type.cost * 1.1,
+          );
+        }
       }
     }
     return best!;
+  }
+
+  /// Fire the commander power at the start of a turn when it will pay off.
+  bool _wantsPower(GameState s, int me, List<Unit> ready) {
+    if (s.commanders[me] == Commander.warden) {
+      final missing = s
+          .unitsOf(me)
+          .fold<int>(0, (sum, u) => sum + min(30, 100 - u.hp));
+      return missing >= 90;
+    }
+    return ready.length >= 2;
   }
 
   /// Our HQ, when an enemy that can capture it is close. A unit standing on
@@ -146,7 +167,7 @@ class AiPlayer {
       var damage = 0;
       for (final t in threats) {
         if (t.tiles.contains(to)) {
-          damage += s.damageTo(t.unit.type, t.unit.hp, moved);
+          damage += s.damageTo(t.unit, t.unit.hp, moved);
         }
       }
       value -= min(damage, unit.hp) / 100 * unit.type.cost * _caution;
@@ -202,6 +223,17 @@ class AiPlayer {
           result[unit.id] = pick;
           continue;
         }
+      }
+
+      if (unit.type.canHeal) {
+        // Healers trail the most battered ally.
+        Unit? patient;
+        for (final ally in s.unitsOf(me)) {
+          if (ally.id == unit.id || ally.type.canHeal) continue;
+          if (patient == null || ally.hp < patient.hp) patient = ally;
+        }
+        if (patient != null) result[unit.id] = patient.pos;
+        continue;
       }
 
       Pos? pick;
@@ -301,10 +333,15 @@ class AiPlayer {
         total += t.baseDamage(e.type) - 0.5 * e.type.baseDamage(t);
       }
       final owned = mine.where((u) => u.type == t).length;
+      // A healer is worth one slot once there is an army to patch up.
+      final support = t.canHeal
+          ? (mine.length >= 4 && owned == 0 ? 45 : -50)
+          : 0;
       scores[t] =
           (enemies.isEmpty ? 0 : total / enemies.length) +
           t.move * 3 -
           8 * owned +
+          support +
           _random.nextDouble() * _noise / 4;
     }
     double matchup(UnitType t) => scores[t]!;

@@ -4,10 +4,14 @@ import 'package:flutter/material.dart';
 
 import '../ai/ai_player.dart';
 import '../core/actions.dart';
+import '../core/game_state.dart';
 import '../core/models.dart';
+import '../core/rules.dart';
 import '../game/board_component.dart';
 import '../game/game_controller.dart';
 import '../game/tactics_game.dart';
+import '../services/achievements.dart';
+import '../services/save_service.dart';
 import '../services/sound_service.dart';
 
 const _playerNames = ['Blue', 'Red'];
@@ -26,7 +30,19 @@ class GameScreen extends StatefulWidget {
     this.onPlayerWin,
     this.nextBuilder,
     this.tutorial = false,
+    this.missionIndex,
+    this.resumeFrom,
+    this.label = 'Battle',
   });
+
+  /// Campaign mission being played, for the save slot.
+  final int? missionIndex;
+
+  /// A saved match to continue instead of starting [mapJson] fresh.
+  final GameState? resumeFrom;
+
+  /// Names the match on the home screen's Continue button.
+  final String label;
 
   /// Shows a coaching line under the board that follows what the player is
   /// doing. Used for the first campaign mission.
@@ -51,8 +67,13 @@ class _GameScreenState extends State<GameScreen> {
   late final _controller = GameController(
     widget.mapJson,
     ai: widget.aiLevel == null ? null : AiPlayer(widget.aiLevel!),
+    resumeFrom: widget.resumeFrom,
   );
   late final _game = TacticsGame(_controller);
+
+  /// Hides the board between turns of a two-player match under fog, so the
+  /// next player does not see the other side's view.
+  bool _curtain = false;
   bool _resultReported = false;
   Phase _lastPhase = Phase.idle;
   bool _soundPlayed = false;
@@ -65,6 +86,10 @@ class _GameScreenState extends State<GameScreen> {
     super.initState();
     SoundService.instance.startGameMusic();
     _controller.eventListeners.add(_playEventSound);
+    _controller.eventListeners.add(_onEvents);
+    _controller.start();
+    AchievementService.instance.load();
+    AchievementService.instance.justUnlocked.addListener(_announce);
     _controller.addListener(() {
       // Stepping deeper into a selection clicks, backing out of it thuds;
       // applied actions have already made their own sound.
@@ -86,6 +111,92 @@ class _GameScreenState extends State<GameScreen> {
     });
   }
 
+  /// Achievements only count for the human against the computer.
+  void _trackAchievements(List<GameEvent> events) {
+    if (widget.aiLevel == null) return;
+    final s = _controller.state;
+    bool mine(int unitId) => s.unitById(unitId)?.owner == 0;
+    final earned = <String>[
+      if (events.any((e) => e is UnitDied && e.owner == 1)) 'first_blood',
+      if (s.buildingCount(0) >= 8) 'landlord',
+      if (events.any((e) => e is UnitPromoted && e.rank == 3 && mine(e.unitId)))
+        'veteran',
+      if (events.any(
+        (e) => e is UnitHealed && e.healerId >= 0 && mine(e.healerId),
+      ))
+        'medic',
+      if (events.any((e) => e is PowerUsed && e.player == 0)) 'unleashed',
+      if (s.winner == 0) ...[
+        if (events.any((e) => e is BuildingCaptured)) 'castle',
+        if (s.unitsOf(1).isEmpty) 'total_war',
+        if (s.turn <= 8) 'blitz',
+        if (s.fog) 'mist',
+        if (widget.aiLevel == AiLevel.hard && widget.missionIndex == null)
+          'tactician',
+        if (widget.mapJson['custom'] == true) 'cartographer',
+      ],
+    ];
+    if (earned.isNotEmpty) AchievementService.instance.unlock(earned);
+  }
+
+  void _announce() {
+    if (!mounted) return;
+    for (final a in AchievementService.instance.justUnlocked.value) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Achievement unlocked: ${a.title}'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  void _onEvents(List<GameEvent> events) {
+    _trackAchievements(events);
+    final s = _controller.state;
+    if (s.winner != null) {
+      SaveService.clear();
+    } else {
+      SaveService.save(
+        SavedMatch(
+          setup: widget.mapJson,
+          state: s,
+          level: widget.aiLevel,
+          mission: widget.missionIndex,
+          label: widget.label,
+        ),
+      );
+    }
+    if (widget.aiLevel == null &&
+        s.fog &&
+        events.any((e) => e is TurnStarted)) {
+      _curtain = true;
+    }
+  }
+
+  Future<void> _confirmPower() async {
+    final commander =
+        _controller.state.commanders[_controller.state.currentPlayer]!;
+    final use = await showDialog<bool>(
+      context: context,
+      builder: (dialog) => AlertDialog(
+        title: Text(commander.power),
+        content: Text('${commander.title}: ${commander.description}'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialog).pop(false),
+            child: const Text('Not now'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialog).pop(true),
+            child: const Text('Unleash'),
+          ),
+        ],
+      ),
+    );
+    if (use == true) _controller.usePower();
+  }
+
   void _playEventSound(List<GameEvent> events) {
     _soundPlayed = true;
     final SoundEffect effect;
@@ -103,6 +214,7 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   void dispose() {
+    AchievementService.instance.justUnlocked.removeListener(_announce);
     SoundService.instance.playMenuMusic();
     _controller.dispose();
     super.dispose();
@@ -131,6 +243,7 @@ class _GameScreenState extends State<GameScreen> {
                     SizedBox(height: 112, child: _panel()),
                   ],
                 ),
+                if (_curtain) _curtainOverlay(),
                 if (_controller.paused) _pauseOverlay(),
               ],
             ),
@@ -200,14 +313,57 @@ class _GameScreenState extends State<GameScreen> {
 
   Widget _statusBar() {
     final s = _controller.state;
-    Widget funds(int player) => Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(Icons.circle, size: 12, color: playerColors[player]),
-        const SizedBox(width: 4),
-        Text('${s.funds[player]}g', style: const TextStyle(fontSize: 16)),
-      ],
-    );
+    Widget funds(int player) {
+      final commander = s.commanders[player];
+      final ready =
+          player == s.currentPlayer &&
+          player == _controller.viewer &&
+          _controller.canUsePower;
+      final badge = commander == null
+          ? Icon(Icons.circle, size: 12, color: playerColors[player])
+          : SizedBox.square(
+              dimension: 30,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    value: s.charge[player] / Commander.maxCharge,
+                    strokeWidth: 3,
+                    color: ready
+                        ? const Color(0xFFFFD54F)
+                        : playerColors[player],
+                    backgroundColor: const Color(0x33FFFFFF),
+                  ),
+                  Text(
+                    commander.title[0],
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: ready ? const Color(0xFFFFD54F) : null,
+                    ),
+                  ),
+                ],
+              ),
+            );
+      return InkWell(
+        onTap: ready ? _confirmPower : null,
+        borderRadius: BorderRadius.circular(20),
+        child: Tooltip(
+          message: commander == null
+              ? ''
+              : '${commander.title} · ${commander.power}: '
+                    '${s.charge[player]}%',
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              badge,
+              const SizedBox(width: 4),
+              Text('${s.funds[player]}g', style: const TextStyle(fontSize: 16)),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 4, 4, 4),
       child: Row(
@@ -293,20 +449,26 @@ class _GameScreenState extends State<GameScreen> {
           children = [
             _hint('Tap one of your units, or your barracks to recruit.'),
             if (c.canUndo) _button('Undo', c.undo, primary: false),
+            if (c.canUsePower)
+              _button(s.commanders[s.currentPlayer]!.power, _confirmPower),
             _button('End turn', c.endTurn),
           ];
         case Phase.moving:
           final u = c.selected!;
           children = [
             _hint(
-              '${u.type.label} · HP ${u.displayHp}/10 · Move ${u.type.move}\n'
+              '${u.type.label}${u.rank > 0 ? ' ${'★' * u.rank}' : ''} · '
+              'HP ${u.displayHp}/10 · Move ${s.moveRange(u)}\n'
               'Tap a blue tile to move there.',
             ),
             _button('Cancel', c.cancel, primary: false),
           ];
         case Phase.menu:
           children = [
-            _button('Attack', c.targets.isEmpty ? null : c.chooseAttack),
+            if (c.selected!.type.canHeal)
+              _button('Heal', c.healTargets.isEmpty ? null : c.chooseHeal)
+            else
+              _button('Attack', c.targets.isEmpty ? null : c.chooseAttack),
             _button('Capture', c.canCapture ? c.chooseCapture : null),
             _button('Wait', c.chooseWait),
             _button('Back', c.cancel, primary: false),
@@ -316,13 +478,19 @@ class _GameScreenState extends State<GameScreen> {
           final lethal = f != null && f.damage >= s.unitAt(c.target!)!.hp;
           children = [
             _hint(
-              f == null
+              c.healing
+                  ? c.target == null
+                        ? 'Tap a wounded ally marked in green.'
+                        : 'Restore up to ${formatHp(UnitType.healAmount)} HP.'
+                  : f == null
                   ? 'Tap an enemy marked in red.'
                   : lethal
                   ? 'Deal ${formatHp(f.damage)} · defeats the enemy'
                   : 'Deal ${formatHp(f.damage)} · take ${formatHp(f.counter)}',
             ),
-            _button('Attack', f == null ? null : c.confirmAttack),
+            c.healing
+                ? _button('Heal', c.target == null ? null : c.confirmAttack)
+                : _button('Attack', f == null ? null : c.confirmAttack),
             _button('Back', c.cancel, primary: false),
           ];
         case Phase.building:
@@ -385,6 +553,35 @@ class _GameScreenState extends State<GameScreen> {
     ),
   );
 
+  Widget _curtainOverlay() {
+    final player = _controller.state.currentPlayer;
+    return Positioned.fill(
+      child: GestureDetector(
+        onTap: () => setState(() => _curtain = false),
+        child: ColoredBox(
+          color: const Color(0xFF10131C),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '${_playerNames[player]}\'s turn',
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: playerColors[player],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text('Pass the device, then tap to continue.'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _pauseOverlay() {
     return Positioned.fill(
       child: ColoredBox(
@@ -404,7 +601,10 @@ class _GameScreenState extends State<GameScreen> {
               ),
               const SizedBox(height: 12),
               OutlinedButton(
-                onPressed: _controller.restart,
+                onPressed: () {
+                  SaveService.clear();
+                  _controller.restart();
+                },
                 child: const Text('Restart'),
               ),
               const SizedBox(height: 12),

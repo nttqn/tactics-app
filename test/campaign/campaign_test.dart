@@ -36,9 +36,11 @@ void main() {
   test('every mission can be won by the computer playing blue', () {
     const games = 6, maxDays = 60;
     final report = StringBuffer();
+    final unwinnable = <int>[];
     for (var m = 0; m < campaign.length; m++) {
       final mission = campaign[m];
-      final map = generateMap(mission.spec);
+      // The player side leads with each commander in turn.
+      final map = missionSetup(m, Commander.values[m % 3]);
       var wins = 0, days = 0;
       for (var seed = 0; seed < games; seed++) {
         final s = GameState.fromMap(map);
@@ -58,10 +60,11 @@ void main() {
         '${m + 1}. ${mission.name}: $wins/$games'
         '${wins > 0 ? ', avg ${days ~/ wins} days' : ''}',
       );
-      expect(wins, greaterThan(0), reason: 'mission ${m + 1} looks unwinnable');
+      if (wins == 0) unwinnable.add(m + 1);
     }
     // ignore: avoid_print
     print(report);
+    expect(unwinnable, isEmpty, reason: 'missions nobody won');
   });
 }
 

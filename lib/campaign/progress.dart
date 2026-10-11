@@ -27,6 +27,16 @@ class Progress extends ChangeNotifier {
     return index < all.length ? int.tryParse(all[index]) : null;
   }
 
+  /// Stars earned across the campaign.
+  int get totalStars {
+    var total = 0;
+    for (var i = 0; i < campaign.length; i++) {
+      final days = bestDays(i);
+      if (days != null) total += starsFor(i, days);
+    }
+    return total;
+  }
+
   Future<void> recordWin(int index, int days) async {
     final all = List.generate(
       campaign.length,

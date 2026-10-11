@@ -327,6 +327,10 @@ void drawUnit(
       canvas.drawCircle(const Offset(9, -12), 3.5, _f(charge));
       canvas.drawCircle(const Offset(-8, 11), 3.5, _f(charge));
       canvas.drawCircle(const Offset(8, 11), 3.5, _f(charge));
+    case UnitType.monk:
+      // Staff with a glowing orb.
+      canvas.drawLine(const Offset(-6, 14), const Offset(4, -8), _s(charge, 3));
+      canvas.drawCircle(const Offset(6, -11), 5, _f(charge));
     case UnitType.griffin:
       // Spread wings.
       for (final side in const [1.0, -1.0]) {

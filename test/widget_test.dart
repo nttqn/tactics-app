@@ -37,7 +37,8 @@ void main() {
     expect(find.text('Day 1 · Red to move'), findsOneWidget);
   });
 
-  testWidgets('menu starts a match and quitting returns to it', (tester) async {
+  testWidgets('a quit match can be continued from the menu', (tester) async {
+    SharedPreferences.setMockInitialValues({});
     tester.view.physicalSize = const Size(360, 640);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -47,10 +48,18 @@ void main() {
         home: const HomeScreen(),
       ),
     );
+    await tester.pump();
+    expect(find.text('Continue'), findsNothing);
     await tester.tap(find.text('2 players, one device'));
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
+    await tester.tap(find.text('To battle!'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
     expect(find.text('End turn'), findsOneWidget);
+    await tester.tap(find.text('End turn'));
+    await tester.pump();
+    expect(find.text('Day 1 · Red to move'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Pause'));
     await tester.pump();
@@ -59,6 +68,11 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     expect(find.text('Campaign'), findsOneWidget);
     expect(find.text('End turn'), findsNothing);
+
+    await tester.tap(find.text('Continue'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Day 1 · Red to move'), findsOneWidget);
   });
 
   testWidgets('campaign lists every mission with only the first unlocked', (
@@ -78,7 +92,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     expect(find.text(campaign.first.name), findsOneWidget);
-    expect(find.text('Not yet won'), findsOneWidget);
+    expect(find.text('Par 9 days'), findsOneWidget);
     expect(find.text('Locked'), findsWidgets);
 
     await tester.tap(find.text(campaign.first.name));

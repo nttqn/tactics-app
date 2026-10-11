@@ -5,6 +5,7 @@ import 'package:flutter/painting.dart';
 import '../core/actions.dart';
 import '../core/game_state.dart';
 import '../core/models.dart';
+import '../core/rules.dart';
 import 'board_art.dart';
 import 'game_controller.dart';
 
@@ -22,8 +23,9 @@ class _UnitVisual {
 class _Popup {
   final String text;
   final Offset at;
+  final TextPaint paint;
   double age = 0;
-  _Popup(this.text, this.at);
+  _Popup(this.text, this.at, this.paint);
 }
 
 /// Draws the whole match (terrain, highlights, units) and forwards taps to the [GameController].
@@ -37,14 +39,18 @@ class BoardComponent extends PositionComponent with TapCallbacks {
   final _paint = Paint();
   GameState? _lastState;
 
-  static final _popupText = TextPaint(
-    style: const TextStyle(
-      color: Color(0xFFFFF176),
-      fontSize: 22,
+  static TextPaint _text(Color color, [double size = 22]) => TextPaint(
+    style: TextStyle(
+      color: color,
+      fontSize: size,
       fontWeight: FontWeight.w900,
-      shadows: [Shadow(color: ink, blurRadius: 4)],
+      shadows: const [Shadow(color: ink, blurRadius: 4)],
     ),
   );
+  static final _damageText = _text(const Color(0xFFFFF176));
+  static final _healText = _text(const Color(0xFF8CF29B));
+  static final _alertText = _text(const Color(0xFFFF8A80));
+  static final _bannerText = _text(const Color(0xFFFFE082), 30);
 
   BoardComponent(this.controller) {
     final s = controller.state;
@@ -72,10 +78,33 @@ class BoardComponent extends PositionComponent with TapCallbacks {
         case UnitDamaged():
           final v = _visuals[e.defenderId];
           if (v != null) {
-            _popups.add(_Popup('-${formatHp(e.damage)}', v.pos));
+            _popups.add(_Popup('-${formatHp(e.damage)}', v.pos, _damageText));
           }
+        case UnitHealed():
+          final v = _visuals[e.unitId];
+          if (v != null) {
+            _popups.add(_Popup('+${formatHp(e.amount)}', v.pos, _healText));
+          }
+        case UnitPromoted():
+          final v = _visuals[e.unitId];
+          if (v != null) {
+            _popups.add(
+              _Popup('Rank up!', v.pos - const Offset(0, 0.4), _damageText),
+            );
+          }
+        case Ambushed():
+          _popups.add(_Popup('Ambush!', _offset(e.stoppedAt), _alertText));
+        case PowerUsed():
+          final s = controller.state;
+          _popups.add(
+            _Popup(
+              e.commander.power,
+              Offset((s.width - 1) / 2, (s.height - 1) / 2),
+              _bannerText,
+            ),
+          );
         case BuildingCaptured():
-          _popups.add(_Popup('Captured!', _offset(e.at)));
+          _popups.add(_Popup('Captured!', _offset(e.at), _damageText));
         default:
           break;
       }
@@ -136,14 +165,28 @@ class BoardComponent extends PositionComponent with TapCallbacks {
         drawTerrain(canvas, s, Pos(x, y));
       }
     }
+    final viewer = controller.viewer;
+    if (s.fog) {
+      _fill(canvas, const Color(0x990B0F1A));
+      for (var y = 0; y < s.height; y++) {
+        for (var x = 0; x < s.width; x++) {
+          if (!s.isVisible(viewer, Pos(x, y))) {
+            canvas.drawRect(_rect(Pos(x, y)), _paint);
+          }
+        }
+      }
+    }
     _drawHighlights(canvas);
     for (final unit in s.units) {
       final v = _visuals[unit.id];
-      if (v != null) _drawUnit(canvas, s, unit, v.pos);
+      if (v == null) continue;
+      final tileNow = Pos(v.pos.dx.round(), v.pos.dy.round());
+      if (unit.owner != viewer && !s.isVisible(viewer, tileNow)) continue;
+      _drawUnit(canvas, s, unit, v.pos);
     }
     for (final p in _popups) {
       final rise = p.age / _popupLife * 0.6;
-      _popupText.render(
+      p.paint.render(
         canvas,
         p.text,
         Vector2((p.at.dx + 0.5) * tile, (p.at.dy + 0.2 - rise) * tile),
@@ -187,8 +230,11 @@ class BoardComponent extends PositionComponent with TapCallbacks {
       case Phase.menu:
         _outline(canvas, controller.destination!, focus);
       case Phase.targeting:
-        for (final t in controller.targets) {
-          _fill(canvas, attackTint);
+        for (final t in controller.currentTargets) {
+          _fill(
+            canvas,
+            controller.healing ? const Color(0x7339D353) : attackTint,
+          );
           canvas.drawRect(_rect(t.pos).deflate(1), _paint);
         }
         _outline(canvas, controller.destination!, focus);

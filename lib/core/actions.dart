@@ -1,7 +1,7 @@
 import 'models.dart';
 
 /// What a unit does after (optionally) moving.
-enum ActionKind { wait, attack, capture }
+enum ActionKind { wait, attack, capture, heal }
 
 sealed class GameAction {
   const GameAction();
@@ -14,7 +14,7 @@ class UnitAction extends GameAction {
   final Pos to;
   final ActionKind kind;
 
-  /// Tile of the enemy to attack; required when [kind] is attack.
+  /// Tile of the enemy to attack or ally to heal; required for those kinds.
   final Pos? target;
 
   const UnitAction(this.unitId, this.to, this.kind, [this.target]);
@@ -31,6 +31,14 @@ class BuildAction extends GameAction {
 
   @override
   String toString() => 'BuildAction(${type.name} at $at)';
+}
+
+/// Unleashes the current player's commander power.
+class UsePowerAction extends GameAction {
+  const UsePowerAction();
+
+  @override
+  String toString() => 'UsePowerAction()';
 }
 
 class EndTurnAction extends GameAction {
@@ -68,7 +76,8 @@ class UnitDamaged extends GameEvent {
 class UnitDied extends GameEvent {
   final int unitId;
   final Pos at;
-  const UnitDied(this.unitId, this.at);
+  final int owner;
+  const UnitDied(this.unitId, this.at, this.owner);
 }
 
 class CaptureProgressed extends GameEvent {
@@ -96,4 +105,32 @@ class TurnStarted extends GameEvent {
 class GameOver extends GameEvent {
   final int winner;
   const GameOver(this.winner);
+}
+
+class UnitHealed extends GameEvent {
+  final int healerId;
+  final int unitId;
+  final int amount;
+  const UnitHealed(this.healerId, this.unitId, this.amount);
+}
+
+/// A unit made a kill and gained a rank.
+class UnitPromoted extends GameEvent {
+  final int unitId;
+  final int rank;
+  const UnitPromoted(this.unitId, this.rank);
+}
+
+class PowerUsed extends GameEvent {
+  final int player;
+  final Commander commander;
+  const PowerUsed(this.player, this.commander);
+}
+
+/// A move through fog ran into a hidden enemy and stopped short.
+class Ambushed extends GameEvent {
+  final int unitId;
+  final Pos stoppedAt;
+  final Pos enemyAt;
+  const Ambushed(this.unitId, this.stoppedAt, this.enemyAt);
 }

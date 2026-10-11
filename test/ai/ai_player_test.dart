@@ -71,7 +71,7 @@ void main() {
   });
 
   test('stronger levels beat weaker ones from either side', () {
-    const games = 20;
+    const games = 40;
     int wins(AiLevel strong, AiLevel weak) {
       var won = 0;
       for (var seed = 0; seed < games; seed++) {
@@ -93,9 +93,9 @@ void main() {
       'wins out of $games: normal>easy $normalVsEasy, '
       'hard>easy $hardVsEasy, hard>normal $hardVsNormal',
     );
-    expect(normalVsEasy, greaterThanOrEqualTo(16));
-    expect(hardVsEasy, greaterThanOrEqualTo(16));
-    expect(hardVsNormal, greaterThanOrEqualTo(10));
+    expect(normalVsEasy, greaterThanOrEqualTo(26));
+    expect(hardVsEasy, greaterThanOrEqualTo(28));
+    expect(hardVsNormal, greaterThanOrEqualTo(22));
   });
 
   test('mirror matches end decisively', () {

@@ -72,57 +72,106 @@ enum Terrain {
 }
 
 enum UnitType {
-  infantry(cost: 100, move: 3, moveClass: MoveClass.foot, canCapture: true),
-  spearman(cost: 200, move: 3, moveClass: MoveClass.foot, canCapture: true),
+  infantry(
+    cost: 100,
+    move: 3,
+    moveClass: MoveClass.foot,
+    vision: 2,
+    canCapture: true,
+  ),
+  spearman(
+    cost: 200,
+    move: 3,
+    moveClass: MoveClass.foot,
+    vision: 2,
+    canCapture: true,
+  ),
   archer(
     cost: 300,
     move: 3,
     moveClass: MoveClass.foot,
+    vision: 3,
     minRange: 2,
     maxRange: 2,
   ),
-  knight(cost: 500, move: 5, moveClass: MoveClass.mounted),
+  knight(cost: 500, move: 5, moveClass: MoveClass.mounted, vision: 3),
   catapult(
     cost: 600,
     move: 3,
     moveClass: MoveClass.mounted,
+    vision: 2,
     minRange: 2,
     maxRange: 4,
     siege: true,
   ),
-  griffin(cost: 800, move: 6, moveClass: MoveClass.flying);
+  griffin(cost: 800, move: 6, moveClass: MoveClass.flying, vision: 4),
+  monk(cost: 300, move: 4, moveClass: MoveClass.foot, vision: 2, canHeal: true);
 
   const UnitType({
     required this.cost,
     required this.move,
     required this.moveClass,
+    required this.vision,
     this.minRange = 1,
     this.maxRange = 1,
     this.canCapture = false,
+    this.canHeal = false,
     this.siege = false,
   });
 
   final int cost;
   final int move;
   final MoveClass moveClass;
+
+  /// How far the unit sees through fog of war.
+  final int vision;
   final int minRange;
   final int maxRange;
   final bool canCapture;
 
+  /// Can restore HP to an adjacent ally instead of attacking.
+  final bool canHeal;
+
   /// Siege units cannot move and attack in the same turn and never counter.
   final bool siege;
+
+  /// HP a healer restores (out of 100).
+  static const healAmount = 30;
 
   // Rows = attacker, columns = defender, in enum order. Percent of a full
   // unit's HP dealt by a full-HP attacker on 0-defense terrain.
   static const _damage = [
-    // inf spear arch knight cata griffin
-    [55, 45, 65, 20, 35, 10], // infantry
-    [60, 50, 70, 75, 50, 15], // spearman
-    [60, 55, 50, 40, 45, 85], // archer
-    [80, 45, 90, 50, 80, 30], // knight
-    [85, 80, 85, 65, 60, 0], // catapult
-    [70, 65, 60, 60, 85, 50], // griffin
+    // inf spear arch knight cata griffin monk
+    [55, 45, 65, 20, 35, 10, 60], // infantry
+    [60, 50, 70, 75, 50, 15, 65], // spearman
+    [60, 55, 50, 40, 45, 85, 70], // archer
+    [80, 45, 90, 50, 80, 30, 85], // knight
+    [85, 80, 85, 65, 60, 0, 80], // catapult
+    [70, 65, 60, 60, 85, 50, 75], // griffin
+    [0, 0, 0, 0, 0, 0, 0], // monk
   ];
 
   int baseDamage(UnitType defender) => _damage[index][defender.index];
+
+  bool get canAttack => _damage[index].any((d) => d > 0);
+}
+
+/// A side's leader. Fighting charges the commander's meter; when it is full
+/// the player may unleash the commander's power once.
+enum Commander {
+  warden('Aldric the Warden', 'Rally', 'All your units recover 3 HP.'),
+  bold('Brenna the Bold', 'Fury', 'Your units deal 30% more damage this turn.'),
+  swift(
+    'Corvin the Swift',
+    'Forced March',
+    'Your units move 2 tiles farther this turn.',
+  );
+
+  const Commander(this.title, this.power, this.description);
+
+  final String title;
+  final String power;
+  final String description;
+
+  static const maxCharge = 100;
 }

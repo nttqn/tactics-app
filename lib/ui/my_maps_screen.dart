@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../ai/ai_player.dart';
 import '../editor/editable_map.dart';
 import '../editor/map_store.dart';
+import 'battle_setup.dart';
 import 'editor_screen.dart';
 import 'game_screen.dart';
 
-enum _MapAction { easy, normal, hard, twoPlayers, copyCode, delete }
+enum _MapAction { vsComputer, twoPlayers, copyCode, delete }
 
 /// The player's own maps: create, edit, play, share as a text code.
 class MyMapsScreen extends StatefulWidget {
@@ -78,21 +78,20 @@ class _MyMapsScreenState extends State<MyMapsScreen> {
         if (mounted) _say('Map code copied.');
       case _MapAction.delete:
         await store.removeAt(index);
-      case _MapAction.easy ||
-          _MapAction.normal ||
-          _MapAction.hard ||
-          _MapAction.twoPlayers:
+      case _MapAction.vsComputer || _MapAction.twoPlayers:
         if (!await checkPlayable(context, map) || !mounted) return;
+        final setup = await showBattleSetup(
+          context,
+          vsComputer: action == _MapAction.vsComputer,
+        );
+        if (setup == null || !mounted) return;
         Navigator.of(context).push(
           MaterialPageRoute<void>(
             builder: (_) => GameScreen(
-              mapJson: map.toJson(),
-              aiLevel: switch (action) {
-                _MapAction.easy => AiLevel.easy,
-                _MapAction.normal => AiLevel.normal,
-                _MapAction.hard => AiLevel.hard,
-                _ => null,
-              },
+              // Marks the match as played on the player's own map.
+              mapJson: {...setup.applyTo(map.toJson()), 'custom': true},
+              aiLevel: setup.level,
+              label: map.name,
             ),
           ),
         );
@@ -166,12 +165,10 @@ class _MyMapsScreenState extends State<MyMapsScreen> {
         trailing: PopupMenuButton<_MapAction>(
           onSelected: (action) => _run(store, index, action),
           itemBuilder: (_) => const [
-            PopupMenuItem(value: _MapAction.easy, child: Text('Play vs Easy')),
             PopupMenuItem(
-              value: _MapAction.normal,
-              child: Text('Play vs Normal'),
+              value: _MapAction.vsComputer,
+              child: Text('Play vs computer'),
             ),
-            PopupMenuItem(value: _MapAction.hard, child: Text('Play vs Hard')),
             PopupMenuItem(
               value: _MapAction.twoPlayers,
               child: Text('Play with 2 players'),

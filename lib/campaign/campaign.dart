@@ -236,11 +236,11 @@ const campaign = <Mission>[
       seed: 14,
       width: 8,
       height: 12,
-      bridges: 2,
+      bridges: 4,
       citiesPerSide: 3,
       funds: [200, 0],
       units: [
-        [_i, _i, _a],
+        [_i, _i, _a, _s],
         [_i, _i, _a],
       ],
     ),
@@ -342,3 +342,47 @@ const campaign = <Mission>[
     ),
   ),
 ];
+
+/// Missions fought under fog of war (0-based).
+const _fogMissions = {8, 12, 16, 18};
+
+/// The first missions teach the basics without commander powers.
+const firstMissionWithCommanders = 3;
+
+bool missionHasFog(int index) => _fogMissions.contains(index);
+
+bool missionHasCommanders(int index) => index >= firstMissionWithCommanders;
+
+/// The enemy leader, rotating through the roster.
+Commander? enemyCommander(int index) => missionHasCommanders(index)
+    ? Commander.values[index % Commander.values.length]
+    : null;
+
+/// Days within which a win earns three stars; bigger maps get longer.
+int parDays(int index) {
+  final spec = campaign[index].spec;
+  return switch (spec.width * spec.height) {
+    <= 48 => 9,
+    <= 70 => 13,
+    <= 80 => 15,
+    _ => 18,
+  };
+}
+
+/// 3 stars within par, 2 within six days more, 1 for any win.
+int starsFor(int index, int days) {
+  final par = parDays(index);
+  if (days <= par) return 3;
+  if (days <= par + 6) return 2;
+  return 1;
+}
+
+/// Map JSON plus match setup for [index], with the player leading as
+/// [player] (ignored before commanders are introduced).
+Map<String, dynamic> missionSetup(int index, Commander? player) => {
+  ...generateMap(campaign[index].spec),
+  'fog': missionHasFog(index),
+  'commanders': missionHasCommanders(index)
+      ? [(player ?? Commander.warden).name, enemyCommander(index)!.name]
+      : [null, null],
+};

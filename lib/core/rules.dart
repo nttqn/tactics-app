@@ -36,11 +36,47 @@ class CombatForecast {
 }
 
 extension GameRules on GameState {
+  /// Tiles [player] can see. Everything when fog of war is off.
+  Set<Pos> visibleTo(int player) => visionCache.putIfAbsent(player, () {
+    final seen = <Pos>{};
+    void look(Pos centre, int radius) {
+      for (var dy = -radius; dy <= radius; dy++) {
+        for (var dx = -radius; dx <= radius; dx++) {
+          final p = Pos(centre.x + dx, centre.y + dy);
+          if (dx.abs() + dy.abs() <= radius && inBounds(p)) seen.add(p);
+        }
+      }
+    }
+
+    for (final u in unitsOf(player)) {
+      // High ground lets ground units see one tile farther.
+      final onPeak =
+          terrainAt(u.pos) == Terrain.mountain &&
+          u.type.moveClass != MoveClass.flying;
+      look(u.pos, u.type.vision + (onPeak ? 1 : 0));
+    }
+    owners.forEach((p, owner) {
+      if (owner == player) look(p, 1);
+    });
+    return seen;
+  });
+
+  bool isVisible(int player, Pos p) => !fog || visibleTo(player).contains(p);
+
+  bool _powerOn(int player, Commander commander) =>
+      powerActive[player] && commanders[player] == commander;
+
+  int moveRange(Unit unit) =>
+      unit.type.move + (_powerOn(unit.owner, Commander.swift) ? 2 : 0);
+
   /// Where [unit] can go this turn. Friendly units can be passed through but
-  /// not stopped on; enemy units block.
+  /// not stopped on; enemy units block. Under fog, enemies the player cannot
+  /// see do not block here; running into one ambushes the move in [apply].
   MoveMap reachable(Unit unit) {
     final occupied = {for (final u in units) u.pos: u};
-    final move = unit.type.move;
+    bool blocking(Unit other) =>
+        other.owner != unit.owner && isVisible(unit.owner, other.pos);
+    final move = moveRange(unit);
     final cost = <Pos, int>{unit.pos: 0};
     final prev = <Pos, Pos>{};
     // Bucket queue: every step costs at least 1, so tiles are only ever
@@ -55,7 +91,7 @@ extension GameRules on GameState {
           final step = terrainAt(n).moveCost(unit.type.moveClass);
           if (step == null || c + step > move) continue;
           final other = occupied[n];
-          if (other != null && other.owner != unit.owner) continue;
+          if (other != null && blocking(other)) continue;
           final known = cost[n];
           if (known != null && known <= c + step) continue;
           cost[n] = c + step;
@@ -66,7 +102,10 @@ extension GameRules on GameState {
     }
     final destinations = {
       for (final p in cost.keys)
-        if (p == unit.pos || !occupied.containsKey(p)) p,
+        if (p == unit.pos ||
+            occupied[p] == null ||
+            (occupied[p]!.owner != unit.owner && !blocking(occupied[p]!)))
+          p,
     };
     return MoveMap._(unit.pos, cost, prev, destinations);
   }
@@ -75,6 +114,7 @@ extension GameRules on GameState {
   bool canAttack(Unit unit, Pos from, Unit target) {
     if (target.owner == unit.owner) return false;
     if (unit.type.siege && from != unit.pos) return false;
+    if (!isVisible(unit.owner, target.pos)) return false;
     if (unit.type.baseDamage(target.type) == 0) return false;
     final d = from.distanceTo(target.pos);
     return d >= unit.type.minRange && d <= unit.type.maxRange;
@@ -85,27 +125,51 @@ extension GameRules on GameState {
       if (canAttack(unit, from, t)) t,
   ];
 
+  /// Whether [unit], standing on [from], may heal the ally [target].
+  bool canHeal(Unit unit, Pos from, Unit target) =>
+      unit.type.canHeal &&
+      target.owner == unit.owner &&
+      target.id != unit.id &&
+      target.hp < GameState.maxHp &&
+      from.distanceTo(target.pos) == 1;
+
+  List<Unit> healTargets(Unit unit, Pos from) => [
+    for (final t in units)
+      if (canHeal(unit, from, t)) t,
+  ];
+
+  bool get canUsePower =>
+      winner == null &&
+      commanders[currentPlayer] != null &&
+      charge[currentPlayer] >= Commander.maxCharge &&
+      !powerActive[currentPlayer];
+
   bool canCaptureAt(Unit unit, Pos at) =>
       unit.type.canCapture &&
       terrainAt(at).isBuilding &&
       owners[at] != unit.owner;
 
-  /// Damage (in HP, 0..100) an [attackerType] at [attackerHp] deals to
-  /// [defender] where it stands.
-  int damageTo(UnitType attackerType, int attackerHp, Unit defender) {
+  /// Damage (in HP, 0..100) [attacker], at [attackerHp], deals to
+  /// [defender] where it stands. Veteran ranks and the Fury power add to it.
+  int damageTo(Unit attacker, int attackerHp, Unit defender) {
     final stars = defender.type.moveClass == MoveClass.flying
         ? 0
         : terrainAt(defender.pos).defense;
     final displayHp = (attackerHp + 9) ~/ 10;
-    return attackerType.baseDamage(defender.type) *
+    final bonus =
+        100 +
+        10 * attacker.rank +
+        (_powerOn(attacker.owner, Commander.bold) ? 30 : 0);
+    return attacker.type.baseDamage(defender.type) *
         displayHp *
-        (100 - 10 * stars) ~/
-        1000;
+        (100 - 10 * stars) *
+        bonus ~/
+        100000;
   }
 
   /// Outcome of [attacker] striking [defender] from [from], without mutating.
   CombatForecast forecast(Unit attacker, Pos from, Unit defender) {
-    final damage = damageTo(attacker.type, attacker.hp, defender);
+    final damage = damageTo(attacker, attacker.hp, defender);
     final defenderHp = defender.hp - damage;
     if (defenderHp <= 0) return CombatForecast(damage, 0);
     final d = from.distanceTo(defender.pos);
@@ -116,7 +180,7 @@ extension GameRules on GameState {
     if (!canCounter) return CombatForecast(damage, 0);
     // The counter is computed against the attacker's destination tile.
     final moved = attacker.copy()..pos = from;
-    return CombatForecast(damage, damageTo(defender.type, defenderHp, moved));
+    return CombatForecast(damage, damageTo(defender, defenderHp, moved));
   }
 
   List<UnitType> buildableAt(Pos at) {
@@ -145,8 +209,12 @@ extension GameRules on GameState {
         for (final t in attackTargets(unit, to)) {
           actions.add(UnitAction(unit.id, to, ActionKind.attack, t.pos));
         }
+        for (final t in healTargets(unit, to)) {
+          actions.add(UnitAction(unit.id, to, ActionKind.heal, t.pos));
+        }
       }
     }
+    if (canUsePower) actions.add(const UsePowerAction());
     owners.forEach((at, owner) {
       if (owner != currentPlayer) return;
       for (final type in buildableAt(at)) {
@@ -161,6 +229,7 @@ extension GameRules on GameState {
   /// leaving the state untouched.
   List<GameEvent> apply(GameAction action) {
     if (winner != null) throw StateError('Game is over');
+    visionCache.clear();
     final events = <GameEvent>[];
     switch (action) {
       case UnitAction():
@@ -180,12 +249,28 @@ extension GameRules on GameState {
         );
         units.add(unit);
         events.add(UnitBuilt(unit.id));
+      case UsePowerAction():
+        if (!canUsePower) throw ArgumentError('Power is not ready');
+        final commander = commanders[currentPlayer]!;
+        charge[currentPlayer] = 0;
+        powerActive[currentPlayer] = true;
+        events.add(PowerUsed(currentPlayer, commander));
+        if (commander == Commander.warden) {
+          for (final u in unitsOf(currentPlayer)) {
+            final amount = (GameState.maxHp - u.hp).clamp(0, 30);
+            if (amount == 0) continue;
+            u.hp += amount;
+            events.add(UnitHealed(-1, u.id, amount));
+          }
+        }
       case EndTurnAction():
+        powerActive[currentPlayer] = false;
         currentPlayer = 1 - currentPlayer;
         if (currentPlayer == 0) turn++;
         beginTurn();
         events.add(TurnStarted(currentPlayer));
     }
+    visionCache.clear();
     if (winner != null) events.add(GameOver(winner!));
     return events;
   }
@@ -212,15 +297,51 @@ extension GameRules on GameState {
         if (!canCaptureAt(unit, action.to)) {
           throw ArgumentError('Invalid capture: $action');
         }
+      case ActionKind.heal:
+        target = action.target == null ? null : unitAt(action.target!);
+        if (target == null || !canHeal(unit, action.to, target)) {
+          throw ArgumentError('Invalid heal: $action');
+        }
     }
 
     if (action.to != unit.pos) {
-      // Leaving a half-captured building abandons the capture.
-      capture.remove(unit.pos);
-      events.add(UnitMoved(unit.id, moves.pathTo(action.to)));
-      unit.pos = action.to;
+      var path = moves.pathTo(action.to);
+      Pos? ambusher;
+      for (var i = 1; i < path.length; i++) {
+        final other = unitAt(path[i]);
+        if (other == null || other.owner == unit.owner) continue;
+        // A hidden enemy blocks the way: stop on the last free tile before it.
+        ambusher = path[i];
+        var j = i - 1;
+        while (j > 0 && unitAt(path[j]) != null) {
+          j--;
+        }
+        path = path.sublist(0, j + 1);
+        break;
+      }
+      if (path.length > 1) {
+        // Leaving a half-captured building abandons the capture.
+        capture.remove(unit.pos);
+        events.add(UnitMoved(unit.id, path));
+        unit.pos = path.last;
+      }
+      if (ambusher != null) {
+        unit.acted = true;
+        events.add(Ambushed(unit.id, unit.pos, ambusher));
+        return;
+      }
     }
     unit.acted = true;
+
+    if (action.kind == ActionKind.heal) {
+      final amount = (GameState.maxHp - target!.hp).clamp(
+        0,
+        UnitType.healAmount,
+      );
+      target.hp += amount;
+      events.add(UnitHealed(unit.id, target.id, amount));
+      return;
+    }
 
     if (target != null) {
       final result = forecast(unit, unit.pos, target);
@@ -253,12 +374,27 @@ extension GameRules on GameState {
     List<GameEvent> events, {
     required bool isCounter,
   }) {
+    // Fighting charges both commanders; the side taking the beating more.
+    final dealt = amount.clamp(0, to.hp);
+    _addCharge(from.owner, dealt * 2 ~/ 5);
+    _addCharge(to.owner, dealt * 3 ~/ 5);
     to.hp -= amount;
     events.add(UnitDamaged(from.id, to.id, amount, isCounter: isCounter));
     if (to.hp <= 0) {
       units.remove(to);
       capture.remove(to.pos);
-      events.add(UnitDied(to.id, to.pos));
+      events.add(UnitDied(to.id, to.pos, to.owner));
+      if (from.rank < Unit.maxRank) {
+        from.rank++;
+        events.add(UnitPromoted(from.id, from.rank));
+      }
     }
+  }
+}
+
+extension on GameState {
+  void _addCharge(int player, int amount) {
+    if (commanders[player] == null) return;
+    charge[player] = (charge[player] + amount).clamp(0, Commander.maxCharge);
   }
 }

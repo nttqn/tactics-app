@@ -18,7 +18,11 @@ class GameController extends ChangeNotifier {
     this.mapJson, {
     this.ai,
     this.aiDelay = const Duration(milliseconds: 600),
-  }) : state = GameState.fromMap(mapJson);
+    GameState? resumeFrom,
+  }) : state = resumeFrom ?? GameState.fromMap(mapJson);
+
+  /// Kicks off the computer if a resumed match was saved during its turn.
+  void start() => _scheduleAi();
 
   /// Plays the second side when set; otherwise two humans share the device.
   final AiPlayer? ai;
@@ -44,14 +48,28 @@ class GameController extends ChangeNotifier {
   Pos? target;
   Pos? buildAt;
 
+  /// Whether the targeting phase picks an ally to heal rather than an enemy.
+  bool healing = false;
+
+  /// Whose eyes the board is drawn through under fog of war: the human
+  /// against the computer, or whoever is moving in a two-player match.
+  int get viewer => ai != null ? 0 : state.currentPlayer;
+
   /// Called synchronously with the events of every applied action.
   final eventListeners = <void Function(List<GameEvent> events)>[];
 
   /// Snapshots taken before each of the player's actions this turn.
   final _history = <GameState>[];
 
+  /// Undo is off under fog: taking back a move would reveal what it saw.
   bool get canUndo =>
-      _history.isNotEmpty && !paused && !aiTurn && state.winner == null;
+      _history.isNotEmpty &&
+      !paused &&
+      !aiTurn &&
+      !state.fog &&
+      state.winner == null;
+
+  bool get canUsePower => !paused && !aiTurn && state.canUsePower;
 
   /// Takes back the player's latest action of the current turn.
   void undo() {
@@ -68,12 +86,19 @@ class GameController extends ChangeNotifier {
       ? const []
       : state.attackTargets(selected!, destination!);
 
+  List<Unit> get healTargets => selected == null || destination == null
+      ? const []
+      : state.healTargets(selected!, destination!);
+
+  /// Units the targeting phase can pick from.
+  List<Unit> get currentTargets => healing ? healTargets : targets;
+
   bool get canCapture =>
       selected != null &&
       destination != null &&
       state.canCaptureAt(selected!, destination!);
 
-  CombatForecast? get forecast => target == null
+  CombatForecast? get forecast => target == null || healing
       ? null
       : state.forecast(selected!, destination!, state.unitAt(target!)!);
 
@@ -98,7 +123,7 @@ class GameController extends ChangeNotifier {
           phase = Phase.moving;
         }
       case Phase.targeting:
-        if (!targets.any((t) => t.pos == p)) {
+        if (!currentTargets.any((t) => t.pos == p)) {
           target = null;
           phase = Phase.menu;
         } else if (target == p) {
@@ -137,8 +162,13 @@ class GameController extends ChangeNotifier {
   void chooseCapture() =>
       _apply(UnitAction(selected!.id, destination!, ActionKind.capture));
 
-  void chooseAttack() {
-    final options = targets;
+  void chooseAttack() => _target(healing: false);
+
+  void chooseHeal() => _target(healing: true);
+
+  void _target({required bool healing}) {
+    this.healing = healing;
+    final options = currentTargets;
     if (options.isEmpty) return;
     // With a single enemy in range there is nothing to pick.
     target = options.length == 1 ? options.first.pos : null;
@@ -148,7 +178,18 @@ class GameController extends ChangeNotifier {
 
   void confirmAttack() {
     if (target == null) return;
-    _apply(UnitAction(selected!.id, destination!, ActionKind.attack, target));
+    _apply(
+      UnitAction(
+        selected!.id,
+        destination!,
+        healing ? ActionKind.heal : ActionKind.attack,
+        target,
+      ),
+    );
+  }
+
+  void usePower() {
+    if (canUsePower) _apply(const UsePowerAction());
   }
 
   void build(UnitType type) => _apply(BuildAction(buildAt!, type));
@@ -229,5 +270,6 @@ class GameController extends ChangeNotifier {
     destination = null;
     target = null;
     buildAt = null;
+    healing = false;
   }
 }
