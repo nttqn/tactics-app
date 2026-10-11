@@ -47,3 +47,10 @@ app.*.map.json
 # Release signing material never goes in the repo.
 *.jks
 keystore-base64.txt
+
+# Apple signing material and its base64 exports.
+*.mobileprovision
+*.p12
+*.p8
+ios-*-base64.txt
+appstore-*-base64.txt
