@@ -18,7 +18,7 @@ class TacticsApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Tactics',
+      title: 'Marchlords',
       debugShowCheckedModeBanner: false,
       theme: buildTheme(),
       home: const HomeScreen(),

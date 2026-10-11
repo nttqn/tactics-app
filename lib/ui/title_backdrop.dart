@@ -94,7 +94,7 @@ class _BackdropPainter extends CustomPainter {
     canvas.drawPath(hill, fill..color = _night);
 
     // The castle is laid out on a unit grid about 65 wide and 50 tall.
-    final u = h / 80;
+    final u = h / 88;
     final ground = h * 0.775;
     canvas.save();
     canvas.translate(w * 0.34 - 32.5 * u, 0);

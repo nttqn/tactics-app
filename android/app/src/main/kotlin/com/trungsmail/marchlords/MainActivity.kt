@@ -1,4 +1,4 @@
-package com.trungsmail.tactics_app
+package com.trungsmail.marchlords
 
 import io.flutter.embedding.android.FlutterActivity
 

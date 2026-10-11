@@ -105,23 +105,31 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           children: [
             SizedBox(
-              height: 230,
+              height: 250,
               width: double.infinity,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
                   const ClipRect(child: TitleBackdrop()),
                   const Align(
-                    alignment: Alignment(0.75, -0.55),
-                    child: Text(
-                      'TACTICS',
-                      style: TextStyle(
-                        fontFamily: displayFont,
-                        fontSize: 40,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 3,
-                        color: gold,
-                        shadows: [Shadow(color: Colors.black, blurRadius: 10)],
+                    alignment: Alignment.topCenter,
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          'MARCHLORDS',
+                          style: TextStyle(
+                            fontFamily: displayFont,
+                            fontSize: 38,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 3,
+                            color: gold,
+                            shadows: [
+                              Shadow(color: Colors.black, blurRadius: 10),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ),

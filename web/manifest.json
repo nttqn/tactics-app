@@ -1,6 +1,6 @@
 {
-    "name": "tactics_app",
-    "short_name": "tactics_app",
+    "name": "Marchlords",
+    "short_name": "Marchlords",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
