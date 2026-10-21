@@ -75,11 +75,13 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _randomBattle({required bool vsComputer}) async {
     final setup = await showBattleSetup(context, vsComputer: vsComputer);
     if (setup == null || !mounted) return;
+    final map = await setup.prepare(
+      generateMap(MapSpec(seed: Random().nextInt(1 << 20))),
+    );
+    if (!mounted) return;
     _open(
       GameScreen(
-        mapJson: setup.applyTo(
-          generateMap(MapSpec(seed: Random().nextInt(1 << 20))),
-        ),
+        mapJson: map,
         aiLevel: setup.level,
         label: vsComputer ? 'Skirmish' : '2 players',
       ),

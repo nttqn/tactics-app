@@ -240,7 +240,10 @@ class _GameScreenState extends State<GameScreen> {
       child: Scaffold(
         body: SafeArea(
           child: ListenableBuilder(
-            listenable: _controller,
+            listenable: Listenable.merge([
+              _controller,
+              AdsService.instance.rewardedReady,
+            ]),
             builder: (context, _) => Stack(
               children: [
                 Column(
@@ -448,7 +451,47 @@ class _GameScreenState extends State<GameScreen> {
     ),
   );
 
+  /// Runs [reward] if the player watches a rewarded ad to the end.
+  Future<void> _afterAd(VoidCallback reward) async {
+    final earned = await AdsService.instance.showRewarded();
+    if (!mounted) return;
+    if (earned) {
+      reward();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('The ad did not finish, so no reward.')),
+      );
+    }
+  }
+
+  String _describeHint(GameAction action) {
+    final s = _controller.state;
+    switch (action) {
+      case UnitAction():
+        final unit = s.unitById(action.unitId)!;
+        final moved = action.to != unit.pos;
+        final where = moved
+            ? 'Move your ${unit.type.label} to the marked tile'
+            : 'Keep your ${unit.type.label} where it is';
+        final target = action.target == null ? null : s.unitAt(action.target!);
+        return switch (action.kind) {
+          ActionKind.attack =>
+            'Hint: $where and attack the ${target!.type.label}.',
+          ActionKind.heal => 'Hint: $where and heal the ${target!.type.label}.',
+          ActionKind.capture => 'Hint: $where and capture the building.',
+          ActionKind.wait => 'Hint: $where and wait.',
+        };
+      case BuildAction():
+        return 'Hint: recruit a ${action.type.label} at your tent.';
+      case UsePowerAction():
+        return 'Hint: unleash ${s.commanders[s.currentPlayer]!.power} now.';
+      case EndTurnAction():
+        return 'Hint: nothing more worth doing. End your turn.';
+    }
+  }
+
   Widget _panel() {
+    final adReady = AdsService.instance.rewardedReady.value;
     final c = _controller;
     final s = c.state;
     final List<Widget> children;
@@ -484,8 +527,21 @@ class _GameScreenState extends State<GameScreen> {
       switch (c.phase) {
         case Phase.idle:
           children = [
-            _hint('Tap one of your units, or your tent to recruit.'),
-            if (c.canUndo) _button('Undo', c.undo, primary: false),
+            _hint(
+              c.hintAction == null
+                  ? 'Tap one of your units, or your tent to recruit.'
+                  : _describeHint(c.hintAction!),
+            ),
+            if (adReady && c.canHint && c.hintAction == null)
+              _button('Hint (ad)', () => _afterAd(c.showHint), primary: false),
+            if (c.canUndo)
+              _button('Undo', c.undo, primary: false)
+            else if (adReady && c.canUndoWithAd)
+              _button(
+                'Undo (ad)',
+                () => _afterAd(() => c.undo(rewarded: true)),
+                primary: false,
+              ),
             if (c.canUsePower)
               _button(s.commanders[s.currentPlayer]!.power, _confirmPower),
             _button('End turn', c.endTurn),

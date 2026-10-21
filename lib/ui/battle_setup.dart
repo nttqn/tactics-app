@@ -5,24 +5,46 @@ import 'package:flutter/material.dart';
 import '../ai/ai_player.dart';
 import '../core/models.dart';
 import '../game/board_art.dart';
+import '../services/ads_service.dart';
 
 /// Choices made before a battle starts.
 class BattleSetup {
   final AiLevel? level;
   final List<Commander?> commanders;
   final bool fog;
+
+  /// The player asked to watch an ad for extra starting gold.
+  final bool bonusGold;
   const BattleSetup({
     required this.level,
     required this.commanders,
     required this.fog,
+    this.bonusGold = false,
   });
 
-  /// [map] with this setup's commanders and fog applied.
-  Map<String, dynamic> applyTo(Map<String, dynamic> map) => {
-    ...map,
-    'fog': fog,
-    'commanders': [for (final c in commanders) c?.name],
-  };
+  static const bonusAmount = 300;
+
+  /// [map] with this setup's commanders and fog applied, and [bonusAmount]
+  /// extra gold for blue when [goldEarned].
+  Map<String, dynamic> applyTo(
+    Map<String, dynamic> map, {
+    bool goldEarned = false,
+  }) {
+    final funds = ((map['funds'] as List?)?.cast<int>() ?? [0, 0]).toList();
+    if (goldEarned) funds[0] += bonusAmount;
+    return {
+      ...map,
+      'fog': fog,
+      'commanders': [for (final c in commanders) c?.name],
+      'funds': funds,
+    };
+  }
+
+  /// Plays the bonus-gold ad when it was asked for, then applies the setup.
+  Future<Map<String, dynamic>> prepare(Map<String, dynamic> map) async {
+    final earned = bonusGold && await AdsService.instance.showRewarded();
+    return applyTo(map, goldEarned: earned);
+  }
 }
 
 String _title(String name) => name[0].toUpperCase() + name.substring(1);
@@ -38,6 +60,7 @@ Future<BattleSetup?> showBattleSetup(
   var level = AiLevel.normal;
   final picks = <Commander>[Commander.warden, Commander.bold];
   var fog = false;
+  var bonusGold = false;
   return showModalBottomSheet<BattleSetup>(
     context: context,
     isScrollControlled: true,
@@ -111,6 +134,19 @@ Future<BattleSetup?> showBattleSetup(
                     value: fog,
                     onChanged: (v) => setState(() => fog = v),
                   ),
+                // Only offered when an ad is actually ready to play.
+                if (vsComputer &&
+                    chooseFog &&
+                    AdsService.instance.rewardedReady.value)
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text(
+                      'Start with +${BattleSetup.bonusAmount} gold',
+                    ),
+                    subtitle: const Text('Watch a short ad before the battle.'),
+                    value: bonusGold,
+                    onChanged: (v) => setState(() => bonusGold = v),
+                  ),
                 const SizedBox(height: 8),
                 SizedBox(
                   width: double.infinity,
@@ -128,6 +164,7 @@ Future<BattleSetup?> showBattleSetup(
                               : picks[1],
                         ],
                         fog: fog,
+                        bonusGold: bonusGold,
                       ),
                     ),
                     child: const Text('To battle!'),

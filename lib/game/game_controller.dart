@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 
@@ -70,11 +71,35 @@ class GameController extends ChangeNotifier {
       !state.fog &&
       state.winner == null;
 
+  /// Under fog, undo is offered in exchange for watching an ad.
+  bool get canUndoWithAd =>
+      _history.isNotEmpty &&
+      !paused &&
+      !aiTurn &&
+      state.fog &&
+      state.winner == null;
+
   bool get canUsePower => !paused && !aiTurn && state.canUsePower;
 
-  /// Takes back the player's latest action of the current turn.
-  void undo() {
-    if (!canUndo) return;
+  /// What the hard computer would do now in the player's place, shown on
+  /// the board until the player taps or acts.
+  GameAction? hintAction;
+
+  bool get canHint => !paused && !aiTurn && state.winner == null;
+
+  void showHint() {
+    if (!canHint) return;
+    hintAction = AiPlayer(
+      AiLevel.hard,
+      random: Random(state.turn),
+    ).nextAction(state.copy());
+    notifyListeners();
+  }
+
+  /// Takes back the player's latest action of the current turn. [rewarded]
+  /// allows it under fog once the player has watched an ad.
+  void undo({bool rewarded = false}) {
+    if (!canUndo && !(rewarded && canUndoWithAd)) return;
     state = _history.removeLast();
     _clear();
     notifyListeners();
@@ -105,6 +130,7 @@ class GameController extends ChangeNotifier {
 
   void tapTile(Pos p) {
     if (paused || aiTurn || state.winner != null || !state.inBounds(p)) return;
+    hintAction = null;
     switch (phase) {
       case Phase.idle:
         _tapIdle(p);
@@ -265,6 +291,7 @@ class GameController extends ChangeNotifier {
   }
 
   void _clear() {
+    hintAction = null;
     phase = Phase.idle;
     selected = null;
     moves = null;

@@ -7,6 +7,9 @@ import 'package:tactics_app/game/game_controller.dart';
 import 'package:tactics_app/services/achievements.dart';
 import 'package:tactics_app/services/save_service.dart';
 import 'package:tactics_app/services/settings.dart';
+import 'package:tactics_app/ui/battle_setup.dart';
+import 'package:tactics_app/core/actions.dart';
+import 'package:tactics_app/core/rules.dart';
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
@@ -89,5 +92,61 @@ void main() {
     expect(Settings.speed.value, 4);
     await Settings.cycleSpeed();
     expect(Settings.speed.value, 1);
+  });
+
+  test('a hint is a legal move and disappears on the next tap', () {
+    final c = GameController({
+      'terrain': ['......'],
+      'units': [
+        {'type': 'knight', 'owner': 0, 'x': 0, 'y': 0},
+        {'type': 'infantry', 'owner': 1, 'x': 3, 'y': 0, 'hp': 30},
+      ],
+    });
+    c.showHint();
+    final hint = c.hintAction;
+    expect(hint, isA<UnitAction>());
+    expect((hint as UnitAction).kind, ActionKind.attack);
+    expect(
+      c.state.legalActions().map((a) => a.toString()),
+      contains(hint.toString()),
+    );
+    c.tapTile(const Pos(5, 0));
+    expect(c.hintAction, isNull);
+  });
+
+  test('under fog, undo needs the reward', () {
+    final c = GameController({
+      'terrain': ['......'],
+      'units': [
+        {'type': 'infantry', 'owner': 0, 'x': 0, 'y': 0},
+        {'type': 'infantry', 'owner': 1, 'x': 5, 'y': 0},
+      ],
+      'fog': true,
+    });
+    c.tapTile(const Pos(0, 0));
+    c.tapTile(const Pos(1, 0));
+    c.chooseWait();
+    expect(c.canUndo, isFalse);
+    expect(c.canUndoWithAd, isTrue);
+    c.undo();
+    expect(c.state.unitById(0)!.pos, const Pos(1, 0));
+    c.undo(rewarded: true);
+    expect(c.state.unitById(0)!.pos, const Pos(0, 0));
+  });
+
+  test('bonus gold only lands when the ad was watched', () {
+    const setup = BattleSetup(
+      level: AiLevel.normal,
+      commanders: [null, null],
+      fog: false,
+      bonusGold: true,
+    );
+    final map = {
+      'terrain': ['..'],
+      'funds': [100, 50],
+    };
+    expect(setup.applyTo(map)['funds'], [100, 50]);
+    expect(setup.applyTo(map, goldEarned: true)['funds'], [400, 50]);
+    expect(map['funds'], [100, 50]);
   });
 }

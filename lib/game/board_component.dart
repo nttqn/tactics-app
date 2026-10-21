@@ -495,7 +495,7 @@ class BoardComponent extends PositionComponent with TapCallbacks {
     const focus = Color(0xFFFFE14D);
     switch (controller.phase) {
       case Phase.idle:
-        break;
+        _drawHint(canvas, pulse);
       case Phase.moving:
         for (final p in controller.moves!.destinations) {
           _fill(canvas, moveTint);
@@ -523,6 +523,39 @@ class BoardComponent extends PositionComponent with TapCallbacks {
         }
       case Phase.building:
         _outline(canvas, controller.buildAt!, focus);
+    }
+  }
+
+  /// Gold markers for the suggested move: the unit, where it goes, and
+  /// what it strikes or heals.
+  void _drawHint(Canvas canvas, double pulse) {
+    final hint = controller.hintAction;
+    final gold = const Color(0xFFFFD54F).withValues(alpha: pulse);
+    switch (hint) {
+      case UnitAction():
+        final unit = controller.state.unitById(hint.unitId);
+        if (unit == null) return;
+        if (hint.to != unit.pos) {
+          _paint
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 5
+            ..strokeCap = StrokeCap.round
+            ..color = gold;
+          canvas.drawLine(
+            _centre(_offset(unit.pos)),
+            _centre(_offset(hint.to)),
+            _paint,
+          );
+        }
+        _outline(canvas, unit.pos, gold);
+        _outline(canvas, hint.to, gold);
+        if (hint.target != null) {
+          _outline(canvas, hint.target!, const Color(0xFFFFFFFF));
+        }
+      case BuildAction():
+        _outline(canvas, hint.at, gold);
+      default:
+        break;
     }
   }
 

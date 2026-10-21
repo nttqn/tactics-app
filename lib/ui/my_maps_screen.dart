@@ -85,11 +85,13 @@ class _MyMapsScreenState extends State<MyMapsScreen> {
           vsComputer: action == _MapAction.vsComputer,
         );
         if (setup == null || !mounted) return;
+        final prepared = await setup.prepare(map.toJson());
+        if (!mounted) return;
         Navigator.of(context).push(
           MaterialPageRoute<void>(
             builder: (_) => GameScreen(
               // Marks the match as played on the player's own map.
-              mapJson: {...setup.applyTo(map.toJson()), 'custom': true},
+              mapJson: {...prepared, 'custom': true},
               aiLevel: setup.level,
               label: map.name,
             ),
