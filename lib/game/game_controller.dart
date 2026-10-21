@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../ai/ai_player.dart';
+import '../services/settings.dart';
 import '../core/actions.dart';
 import '../core/game_state.dart';
 import '../core/models.dart';
@@ -257,7 +258,8 @@ class GameController extends ChangeNotifier {
   void _scheduleAi() {
     _aiTimer?.cancel();
     if (!aiTurn || paused) return;
-    _aiTimer = Timer(aiDelay, () {
+    final delay = aiDelay ~/ Settings.speed.value;
+    _aiTimer = Timer(delay, () {
       if (aiTurn && !paused) _perform(ai!.nextAction(state));
     });
   }

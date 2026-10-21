@@ -55,13 +55,26 @@ class SoundService {
   /// What bgm is actually playing right now.
   String? _playing;
 
+  /// No audio focus on Android: by default every player requests focus,
+  /// and the one losing it (the music) is paused each time an effect plays.
+  /// Ambient on iOS mixes with other apps the same way.
+  static final _audioContext = AudioContext(
+    android: const AudioContextAndroid(audioFocus: AndroidAudioFocus.none),
+    iOS: AudioContextIOS(category: AVAudioSessionCategory.ambient),
+  );
+
   Future<void> init() async {
+    try {
+      await AudioPlayer.global.setAudioContext(_audioContext);
+    } catch (_) {}
     final prefs = await SharedPreferences.getInstance();
     musicEnabled.value = prefs.getBool(_musicKey) ?? true;
     sfxEnabled.value = prefs.getBool(_sfxKey) ?? true;
     try {
       // Also makes bgm pause/resume with the app going to background.
-      FlameAudio.bgm.initialize();
+      // Passed explicitly too: the bgm player has its own fallback context
+      // and may be created before the global one above is in place.
+      await FlameAudio.bgm.initialize(audioContext: _audioContext);
       _bgmReady = true;
       await FlameAudio.audioCache
           .loadAll([menuTrack, ...gameTracks])
@@ -73,6 +86,7 @@ class SoundService {
           entry.value,
           minPlayers: 1,
           maxPlayers: 3,
+          audioContext: _audioContext,
         ).timeout(const Duration(seconds: 5));
       } catch (_) {
         // That one effect just stays silent.

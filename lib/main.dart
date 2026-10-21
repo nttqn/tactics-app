@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'services/ads_service.dart';
+import 'services/settings.dart';
 import 'services/sound_service.dart';
 import 'ui/home_screen.dart';
 import 'ui/theme.dart';
@@ -14,6 +15,7 @@ void main() {
   SoundService.instance.init();
   SoundService.instance.playMenuMusic();
   AdsService.instance.initialize();
+  Settings.load();
   runApp(const TacticsApp());
 }
 

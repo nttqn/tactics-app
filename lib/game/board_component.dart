@@ -8,6 +8,7 @@ import '../core/actions.dart';
 import '../core/game_state.dart';
 import '../core/models.dart';
 import '../core/rules.dart';
+import '../services/settings.dart';
 import 'board_art.dart';
 import 'game_controller.dart';
 
@@ -311,7 +312,10 @@ class BoardComponent extends PositionComponent with TapCallbacks {
 
   @override
   void update(double dt) {
+    // Idle sway and water keep real time; battle effects follow the speed
+    // setting so faster turns do not leave animations lagging behind.
     _time += dt;
+    dt *= Settings.speed.value;
     final s = controller.state;
     if (!identical(s, _lastState)) {
       // A different match state (restart, undo): drop everything in flight.

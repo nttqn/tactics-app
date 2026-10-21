@@ -15,6 +15,7 @@ import '../game/tactics_game.dart';
 import '../services/achievements.dart';
 import '../services/ads_service.dart';
 import '../services/save_service.dart';
+import '../services/settings.dart';
 import '../services/sound_service.dart';
 
 const _playerNames = ['Blue', 'Red'];
@@ -466,7 +467,14 @@ class _GameScreenState extends State<GameScreen> {
         }, primary: false),
       ];
     } else if (c.aiTurn) {
-      children = [_hint('The enemy is taking its turn.')];
+      children = [
+        _hint('The enemy is taking its turn.'),
+        ValueListenableBuilder(
+          valueListenable: Settings.speed,
+          builder: (context, speed, _) =>
+              _button('Speed x$speed', Settings.cycleSpeed, primary: false),
+        ),
+      ];
     } else {
       switch (c.phase) {
         case Phase.idle:

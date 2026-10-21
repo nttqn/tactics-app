@@ -6,6 +6,7 @@ import 'package:tactics_app/core/models.dart';
 import 'package:tactics_app/game/game_controller.dart';
 import 'package:tactics_app/services/achievements.dart';
 import 'package:tactics_app/services/save_service.dart';
+import 'package:tactics_app/services/settings.dart';
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
@@ -75,5 +76,18 @@ void main() {
     expect(c.forecast, isNull);
     c.confirmAttack();
     expect(c.state.unitById(1)!.hp, 80);
+  });
+
+  test('battle speed cycles x1, x2, x4 and is remembered', () async {
+    await Settings.load();
+    expect(Settings.speed.value, 1);
+    await Settings.cycleSpeed();
+    await Settings.cycleSpeed();
+    expect(Settings.speed.value, 4);
+    Settings.speed.value = 1;
+    await Settings.load();
+    expect(Settings.speed.value, 4);
+    await Settings.cycleSpeed();
+    expect(Settings.speed.value, 1);
   });
 }
