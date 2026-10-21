@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import '../core/game_state.dart';
 import '../core/models.dart';
+import '../l10n.dart';
 
 typedef PlacedUnit = ({UnitType type, int owner});
 
@@ -171,7 +172,6 @@ class EditableMap {
 
   /// Human-readable reasons the map cannot be played yet; empty when ready.
   List<String> problems() {
-    const names = ['Blue', 'Red'];
     final result = <String>[];
     final castles = <Pos?>[null, null];
     for (var player = 0; player < 2; player++) {
@@ -182,7 +182,12 @@ class EditableMap {
       if (own.length == 1) {
         castles[player] = own.first;
       } else {
-        result.add('${names[player]} needs a castle.');
+        result.add(
+          tr(
+            '${playerName(player)} needs a castle.',
+            'Phe ${playerName(player)} cần một lâu đài.',
+          ),
+        );
       }
       final hasArmy =
           units.values.any((u) => u.owner == player) ||
@@ -190,7 +195,12 @@ class EditableMap {
             (e) => e.value == player && terrainAt(e.key) == Terrain.barracks,
           );
       if (!hasArmy) {
-        result.add('${names[player]} needs a unit or a tent to recruit from.');
+        result.add(
+          tr(
+            '${playerName(player)} needs a unit or a tent to recruit from.',
+            'Phe ${playerName(player)} cần ít nhất một quân hoặc một lều trại.',
+          ),
+        );
       }
     }
     final from = castles[0], to = castles[1];
@@ -205,7 +215,12 @@ class EditableMap {
         }
       }
       if (!reached.contains(to)) {
-        result.add('The castles must be connected by land or a bridge.');
+        result.add(
+          tr(
+            'The castles must be connected by land or a bridge.',
+            'Hai lâu đài phải nối với nhau bằng đất liền hoặc cầu.',
+          ),
+        );
       }
     }
     return result;

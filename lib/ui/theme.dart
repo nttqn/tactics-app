@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../l10n.dart';
+
 /// Medieval look: dark timber surfaces, gold trim, parchment text, and the
 /// Cinzel display face for titles and buttons.
 const woodDark = Color(0xFF21170F);
@@ -8,7 +10,12 @@ const woodLight = Color(0xFF5B4129);
 const gold = Color(0xFFE2B55A);
 const goldDark = Color(0xFF8A6427);
 const parchment = Color(0xFFF2E6CC);
-const displayFont = 'Cinzel';
+
+/// The game's title is always set in Cinzel.
+const titleFont = 'Cinzel';
+
+/// Cinzel has no Vietnamese accents, so Vietnamese text uses Alegreya SC.
+String get displayFont => L10n.vi ? 'AlegreyaSC' : titleFont;
 
 ThemeData buildTheme() {
   const scheme = ColorScheme.dark(
@@ -28,7 +35,7 @@ ThemeData buildTheme() {
     brightness: Brightness.dark,
     colorScheme: scheme,
   );
-  const display = TextStyle(
+  final display = TextStyle(
     fontFamily: displayFont,
     fontWeight: FontWeight.w700,
   );

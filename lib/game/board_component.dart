@@ -11,6 +11,7 @@ import '../core/rules.dart';
 import '../services/settings.dart';
 import 'board_art.dart';
 import 'game_controller.dart';
+import '../l10n.dart';
 
 export 'board_art.dart' show playerColors;
 
@@ -232,7 +233,11 @@ class BoardComponent extends PositionComponent with TapCallbacks {
           if (v == null) break;
           _after(t + 0.1, () {
             _popups.add(
-              _Popup('Rank up!', v.pos - const Offset(0, 0.4), _damageText),
+              _Popup(
+                tr('Rank up!', 'Lên cấp!'),
+                v.pos - const Offset(0, 0.4),
+                _damageText,
+              ),
             );
             _rings.add(_Ring(v.pos, const Color(0xFFFFD54F)));
           });
@@ -249,7 +254,9 @@ class BoardComponent extends PositionComponent with TapCallbacks {
           });
         case BuildingCaptured():
           _after(t, () {
-            _popups.add(_Popup('Captured!', _offset(e.at), _damageText));
+            _popups.add(
+              _Popup(tr('Captured!', 'Đã chiếm!'), _offset(e.at), _damageText),
+            );
             _rings.add(_Ring(_offset(e.at), playerColors[e.owner]));
           });
         case UnitBuilt():
@@ -257,14 +264,23 @@ class BoardComponent extends PositionComponent with TapCallbacks {
           _after(0, () => _visuals[e.unitId]?.spawn = 0);
         case Ambushed():
           _after(t, () {
-            _popups.add(_Popup('Ambush!', _offset(e.stoppedAt), _alertText));
+            _popups.add(
+              _Popup(
+                tr('Ambush!', 'Phục kích!'),
+                _offset(e.stoppedAt),
+                _alertText,
+              ),
+            );
           });
         case PowerUsed():
-          _banner = _Banner(e.commander.power, playerColors[e.player]);
+          _banner = _Banner(e.commander.powerName, playerColors[e.player]);
         case TurnStarted():
           // Against the computer only the player's own turn is announced.
           if (controller.ai == null || e.player == 0) {
-            _banner = _Banner('Day ${s.turn}', playerColors[e.player]);
+            _banner = _Banner(
+              tr('Day ${s.turn}', 'Ngày ${s.turn}'),
+              playerColors[e.player],
+            );
           }
         case GameOver():
           break;

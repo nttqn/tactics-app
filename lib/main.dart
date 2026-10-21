@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'l10n.dart';
 import 'services/ads_service.dart';
 import 'services/settings.dart';
 import 'services/sound_service.dart';
@@ -16,6 +17,7 @@ void main() {
   SoundService.instance.playMenuMusic();
   AdsService.instance.initialize();
   Settings.load();
+  L10n.load();
   runApp(const TacticsApp());
 }
 
@@ -24,11 +26,17 @@ class TacticsApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Marchlords',
-      debugShowCheckedModeBanner: false,
-      theme: buildTheme(),
-      home: const HomeScreen(),
+    // A language switch rebuilds the whole app (the key resets it to the
+    // home screen, which is where the switch lives).
+    return ValueListenableBuilder(
+      valueListenable: L10n.language,
+      builder: (context, language, _) => MaterialApp(
+        key: ValueKey(language),
+        title: 'Marchlords',
+        debugShowCheckedModeBanner: false,
+        theme: buildTheme(),
+        home: const HomeScreen(),
+      ),
     );
   }
 }

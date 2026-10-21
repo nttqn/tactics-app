@@ -6,6 +6,7 @@ import '../editor/map_store.dart';
 import 'battle_setup.dart';
 import 'editor_screen.dart';
 import 'game_screen.dart';
+import '../l10n.dart';
 
 enum _MapAction { vsComputer, twoPlayers, copyCode, delete }
 
@@ -38,7 +39,7 @@ class _MyMapsScreenState extends State<MyMapsScreen> {
     final size = await showDialog<(int, int)>(
       context: context,
       builder: (dialog) => SimpleDialog(
-        title: const Text('New map size'),
+        title: Text(tr('New map size', 'Cỡ bản đồ mới')),
         children: [
           for (final size in EditableMap.sizes)
             SimpleDialogOption(
@@ -50,7 +51,7 @@ class _MyMapsScreenState extends State<MyMapsScreen> {
     );
     if (size == null || !mounted) return;
     final map = EditableMap.blank(
-      'Map ${store.maps.length + 1}',
+      '${tr('Map', 'Bản đồ')} ${store.maps.length + 1}',
       size.$1,
       size.$2,
     );
@@ -63,11 +64,16 @@ class _MyMapsScreenState extends State<MyMapsScreen> {
     final map = EditableMap.fromCode(data?.text ?? '');
     if (!mounted) return;
     if (map == null) {
-      _say('No map code found on the clipboard.');
+      _say(
+        tr(
+          'No map code found on the clipboard.',
+          'Không thấy mã bản đồ trong bộ nhớ tạm.',
+        ),
+      );
       return;
     }
     await store.add(map);
-    if (mounted) _say('Imported "${map.name}".');
+    if (mounted) _say(tr('Imported "${map.name}".', 'Đã nhập "${map.name}".'));
   }
 
   Future<void> _run(MapStore store, int index, _MapAction action) async {
@@ -75,7 +81,7 @@ class _MyMapsScreenState extends State<MyMapsScreen> {
     switch (action) {
       case _MapAction.copyCode:
         await Clipboard.setData(ClipboardData(text: map.toCode()));
-        if (mounted) _say('Map code copied.');
+        if (mounted) _say(tr('Map code copied.', 'Đã chép mã bản đồ.'));
       case _MapAction.delete:
         await store.removeAt(index);
       case _MapAction.vsComputer || _MapAction.twoPlayers:
@@ -108,11 +114,14 @@ class _MyMapsScreenState extends State<MyMapsScreen> {
         final store = snapshot.data;
         return Scaffold(
           appBar: AppBar(
-            title: const Text('My maps'),
+            title: Text(tr('My maps', 'Bản đồ của tôi')),
             actions: [
               if (store != null)
                 IconButton(
-                  tooltip: 'Import a map code from the clipboard',
+                  tooltip: tr(
+                    'Import a map code from the clipboard',
+                    'Nhập mã bản đồ từ bộ nhớ tạm',
+                  ),
                   icon: const Icon(Icons.content_paste),
                   onPressed: () => _import(store),
                 ),
@@ -123,19 +132,23 @@ class _MyMapsScreenState extends State<MyMapsScreen> {
               : FloatingActionButton.extended(
                   onPressed: () => _create(store),
                   icon: const Icon(Icons.add),
-                  label: const Text('New map'),
+                  label: Text(tr('New map', 'Bản đồ mới')),
                 ),
           body: store == null
               ? const Center(child: CircularProgressIndicator())
               : ListenableBuilder(
                   listenable: store,
                   builder: (context, _) => store.maps.isEmpty
-                      ? const Center(
+                      ? Center(
                           child: Padding(
-                            padding: EdgeInsets.all(24),
+                            padding: const EdgeInsets.all(24),
                             child: Text(
-                              'No maps yet. Create one, or copy a map code '
-                              'and tap the paste button.',
+                              tr(
+                                'No maps yet. Create one, or copy a map code '
+                                    'and tap the paste button.',
+                                'Chưa có bản đồ nào. Hãy tạo mới, hoặc chép '
+                                    'một mã bản đồ rồi bấm nút dán.',
+                              ),
                               textAlign: TextAlign.center,
                             ),
                           ),
@@ -158,23 +171,30 @@ class _MyMapsScreenState extends State<MyMapsScreen> {
       child: ListTile(
         title: Text(map.name),
         subtitle: Text(
-          '${map.width} × ${map.height} · ${ready ? 'Ready to play' : 'Unfinished'}',
+          '${map.width} × ${map.height} · '
+          '${ready ? tr('Ready to play', 'Sẵn sàng') : tr('Unfinished', 'Chưa xong')}',
         ),
         leading: const Icon(Icons.map),
         onTap: () => _edit(store, map),
         trailing: PopupMenuButton<_MapAction>(
           onSelected: (action) => _run(store, index, action),
-          itemBuilder: (_) => const [
+          itemBuilder: (_) => [
             PopupMenuItem(
               value: _MapAction.vsComputer,
-              child: Text('Play vs computer'),
+              child: Text(tr('Play vs computer', 'Đấu với máy')),
             ),
             PopupMenuItem(
               value: _MapAction.twoPlayers,
-              child: Text('Play with 2 players'),
+              child: Text(tr('Play with 2 players', 'Chơi 2 người')),
             ),
-            PopupMenuItem(value: _MapAction.copyCode, child: Text('Copy code')),
-            PopupMenuItem(value: _MapAction.delete, child: Text('Delete')),
+            PopupMenuItem(
+              value: _MapAction.copyCode,
+              child: Text(tr('Copy code', 'Chép mã')),
+            ),
+            PopupMenuItem(
+              value: _MapAction.delete,
+              child: Text(tr('Delete', 'Xóa')),
+            ),
           ],
         ),
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/achievements.dart';
+import '../l10n.dart';
 
 class AchievementsScreen extends StatefulWidget {
   const AchievementsScreen({super.key});
@@ -16,7 +17,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
   Widget build(BuildContext context) {
     final unlocked = AchievementService.instance.unlocked;
     return Scaffold(
-      appBar: AppBar(title: const Text('Achievements')),
+      appBar: AppBar(title: Text(tr('Achievements', 'Thành tích'))),
       body: FutureBuilder(
         future: _loaded,
         builder: (context, snapshot) {
@@ -29,7 +30,10 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Text(
-                  '${unlocked.length} / ${achievements.length} earned',
+                  tr(
+                    '${unlocked.length} / ${achievements.length} earned',
+                    'Đã đạt ${unlocked.length} / ${achievements.length}',
+                  ),
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontSize: 18),
                 ),
@@ -45,8 +49,8 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                           ? const Color(0xFFFFD54F)
                           : null,
                     ),
-                    title: Text(a.title),
-                    subtitle: Text(a.description),
+                    title: Text(a.name),
+                    subtitle: Text(a.text),
                     enabled: unlocked.contains(a.id),
                   ),
                 ),

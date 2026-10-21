@@ -7,6 +7,7 @@ import '../services/achievements.dart';
 import '../services/save_service.dart';
 import 'battle_setup.dart';
 import 'game_screen.dart';
+import '../l10n.dart';
 
 /// The screen for campaign mission [index], led by [commander], or
 /// continuing [resume].
@@ -24,7 +25,7 @@ Widget missionScreen(
     aiLevel: mission.level,
     tutorial: index == 0,
     missionIndex: index,
-    label: 'Mission ${index + 1} · ${mission.name}',
+    label: '${tr('Mission', 'Màn')} ${index + 1} · ${missionName(index)}',
     onPlayerWin: (days) async {
       await progress.recordWin(index, days);
       AchievementService.instance.unlock([
@@ -79,7 +80,7 @@ class _CampaignScreenState extends State<CampaignScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Campaign')),
+      appBar: AppBar(title: Text(tr('Campaign', 'Chiến dịch'))),
       body: FutureBuilder(
         future: _progress,
         builder: (context, snapshot) {
@@ -117,22 +118,28 @@ class _CampaignScreenState extends State<CampaignScreen> {
     final best = progress.bestDays(index);
     final stars = best == null ? 0 : starsFor(index, best);
     final traits = [
-      if (missionHasFog(index)) 'Fog',
+      if (missionHasFog(index)) tr('Fog', 'Sương mù'),
       if (enemyCommander(index) != null)
-        'vs ${enemyCommander(index)!.title.split(' ').first}',
+        '${tr('vs', 'đấu')} ${enemyCommander(index)!.shortName}',
     ].join(' · ');
     return Card(
       child: ListTile(
         enabled: unlocked,
         leading: CircleAvatar(child: Text('${index + 1}')),
-        title: Text(campaign[index].name),
+        title: Text(missionName(index)),
         subtitle: Text(
           [
             !unlocked
-                ? 'Locked'
+                ? tr('Locked', 'Chưa mở')
                 : best == null
-                ? 'Par ${parDays(index)} days'
-                : 'Best $best days · par ${parDays(index)}',
+                ? tr(
+                    'Par ${parDays(index)} days',
+                    'Chuẩn ${parDays(index)} ngày',
+                  )
+                : tr(
+                    'Best $best days · par ${parDays(index)}',
+                    'Tốt nhất $best ngày · chuẩn ${parDays(index)}',
+                  ),
             if (traits.isNotEmpty) traits,
           ].join('\n'),
         ),

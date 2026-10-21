@@ -209,7 +209,10 @@ void main() {
     await tester.pumpWidget(
       RepaintBoundary(
         key: key,
-        child: CustomPaint(size: const Size(1024, 1024), painter: IconPainter()),
+        child: CustomPaint(
+          size: const Size(1024, 1024),
+          painter: IconPainter(),
+        ),
       ),
     );
     await tester.runAsync(() async {

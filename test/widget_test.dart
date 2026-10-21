@@ -177,7 +177,7 @@ void main() {
     await tester.tap(find.text('OK'));
     await settle(tester);
 
-    await tester.tap(find.byTooltip('forest'));
+    await tester.tap(find.byTooltip('Forest'));
     await tester.pump();
     await tester.tap(find.byKey(const ValueKey('editor-board')));
     await tester.pump();

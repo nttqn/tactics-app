@@ -1,6 +1,7 @@
 import '../ai/ai_player.dart';
 import '../core/map_generator.dart';
 import '../core/models.dart';
+import '../l10n.dart';
 
 class Mission {
   final String name;
@@ -386,3 +387,30 @@ Map<String, dynamic> missionSetup(int index, Commander? player) => {
       ? [(player ?? Commander.warden).name, enemyCommander(index)!.name]
       : [null, null],
 };
+
+const _viMissionNames = [
+  'Khởi Binh',
+  'Cối Xay Cũ',
+  'Cầu Đôi',
+  'Canh Giữ Biên Ải',
+  'Đường Mùa Gặt',
+  'Bến Lội',
+  'Đồn Trên Đồi',
+  'Kỵ Binh Lúc Bình Minh',
+  'Cầu Gãy',
+  'Phòng Tuyến Vây Thành',
+  'Rừng Xanh',
+  'Cánh Trên Dòng Sông',
+  'Cuộc Hành Quân Dài',
+  'Vượt Sông',
+  'Đèo Núi',
+  'Thủy Triều Sắt',
+  'Ba Bến Lội',
+  'Tổ Sư Thứu',
+  'Lãnh Chúa',
+  'Trận Cuối Cùng',
+];
+
+/// The mission's name in the active language.
+String missionName(int index) =>
+    tr(campaign[index].name, _viMissionNames[index]);

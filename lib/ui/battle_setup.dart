@@ -6,6 +6,7 @@ import '../ai/ai_player.dart';
 import '../core/models.dart';
 import '../game/board_art.dart';
 import '../services/ads_service.dart';
+import '../l10n.dart';
 
 /// Choices made before a battle starts.
 class BattleSetup {
@@ -47,8 +48,6 @@ class BattleSetup {
   }
 }
 
-String _title(String name) => name[0].toUpperCase() + name.substring(1);
-
 /// Asks for difficulty, commanders and fog. Against the computer the enemy
 /// commander is picked at random. Returns null if dismissed.
 Future<BattleSetup?> showBattleSetup(
@@ -82,7 +81,7 @@ Future<BattleSetup?> showBattleSetup(
               children: [
                 for (final c in Commander.values)
                   ChoiceChip(
-                    label: Text(c.title.split(' ').first),
+                    label: Text(c.shortName),
                     selected: picks[player] == c,
                     onSelected: (_) => setState(() => picks[player] = c),
                   ),
@@ -90,7 +89,7 @@ Future<BattleSetup?> showBattleSetup(
             ),
             const SizedBox(height: 4),
             Text(
-              '${picks[player].power}: ${picks[player].description}',
+              '${picks[player].powerName}: ${picks[player].powerText}',
               style: const TextStyle(fontSize: 13),
             ),
             const SizedBox(height: 14),
@@ -104,17 +103,17 @@ Future<BattleSetup?> showBattleSetup(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Prepare for battle',
+                  tr('Prepare for battle', 'Chuẩn bị xuất trận'),
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 16),
                 if (vsComputer && chooseLevel) ...[
-                  const Text('Enemy skill'),
+                  Text(tr('Enemy skill', 'Sức mạnh của địch')),
                   const SizedBox(height: 6),
                   SegmentedButton<AiLevel>(
                     segments: [
                       for (final l in AiLevel.values)
-                        ButtonSegment(value: l, label: Text(_title(l.name))),
+                        ButtonSegment(value: l, label: Text(levelName(l))),
                     ],
                     selected: {level},
                     onSelectionChanged: (s) => setState(() => level = s.first),
@@ -123,14 +122,22 @@ Future<BattleSetup?> showBattleSetup(
                 ],
                 commanderRow(
                   0,
-                  vsComputer ? 'Your commander' : 'Blue commander',
+                  vsComputer
+                      ? tr('Your commander', 'Tướng của bạn')
+                      : tr('Blue commander', 'Tướng phe Xanh'),
                 ),
-                if (!vsComputer) commanderRow(1, 'Red commander'),
+                if (!vsComputer)
+                  commanderRow(1, tr('Red commander', 'Tướng phe Đỏ')),
                 if (chooseFog)
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('Fog of war'),
-                    subtitle: const Text('See only what your units can see.'),
+                    title: Text(tr('Fog of war', 'Sương mù chiến tranh')),
+                    subtitle: Text(
+                      tr(
+                        'See only what your units can see.',
+                        'Chỉ thấy những gì quân mình nhìn thấy.',
+                      ),
+                    ),
                     value: fog,
                     onChanged: (v) => setState(() => fog = v),
                   ),
@@ -140,10 +147,18 @@ Future<BattleSetup?> showBattleSetup(
                     AdsService.instance.rewardedReady.value)
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text(
-                      'Start with +${BattleSetup.bonusAmount} gold',
+                    title: Text(
+                      tr(
+                        'Start with +${BattleSetup.bonusAmount} gold',
+                        'Khởi đầu thêm ${BattleSetup.bonusAmount} vàng',
+                      ),
                     ),
-                    subtitle: const Text('Watch a short ad before the battle.'),
+                    subtitle: Text(
+                      tr(
+                        'Watch a short ad before the battle.',
+                        'Xem một quảng cáo ngắn trước trận.',
+                      ),
+                    ),
                     value: bonusGold,
                     onChanged: (v) => setState(() => bonusGold = v),
                   ),
@@ -167,7 +182,7 @@ Future<BattleSetup?> showBattleSetup(
                         bonusGold: bonusGold,
                       ),
                     ),
-                    child: const Text('To battle!'),
+                    child: Text(tr('To battle!', 'Xuất trận!')),
                   ),
                 ),
               ],

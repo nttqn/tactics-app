@@ -18,6 +18,7 @@ import 'how_to_play_screen.dart';
 import 'my_maps_screen.dart';
 import 'theme.dart';
 import 'title_backdrop.dart';
+import '../l10n.dart';
 
 /// Mode select: continue a saved match, campaign, a one-off battle against
 /// the computer on a random map, two players on one device, and extras.
@@ -83,7 +84,9 @@ class _HomeScreenState extends State<HomeScreen> {
       GameScreen(
         mapJson: map,
         aiLevel: setup.level,
-        label: vsComputer ? 'Skirmish' : '2 players',
+        label: vsComputer
+            ? tr('Skirmish', 'Giao tranh')
+            : tr('2 players', '2 người chơi'),
       ),
     );
   }
@@ -173,7 +176,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Text(
                           'MARCHLORDS',
                           style: TextStyle(
-                            fontFamily: displayFont,
+                            fontFamily: titleFont,
                             fontSize: 38,
                             fontWeight: FontWeight.w900,
                             letterSpacing: 3,
@@ -190,6 +193,18 @@ class _HomeScreenState extends State<HomeScreen> {
                     alignment: Alignment.bottomCenter,
                     child: Container(height: 3, color: goldDark),
                   ),
+                  Align(
+                    alignment: Alignment.bottomRight,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: TextButton.icon(
+                        onPressed: L10n.toggle,
+                        icon: const Icon(Icons.translate, size: 18),
+                        // Names the language the button switches to.
+                        label: Text(L10n.vi ? 'English' : 'Tiếng Việt'),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -205,14 +220,18 @@ class _HomeScreenState extends State<HomeScreen> {
                         final saved = snapshot.data;
                         if (saved == null) return const SizedBox.shrink();
                         return option(
-                          'Continue',
+                          tr('Continue', 'Chơi tiếp'),
                           () => _continue(saved),
                           primary: true,
-                          subtitle: '${saved.label} · day ${saved.state.turn}',
+                          subtitle:
+                              '${saved.label} · ${tr('day', 'ngày')} ${saved.state.turn}',
                         );
                       },
                     ),
-                    option('Campaign', () => _open(const CampaignScreen())),
+                    option(
+                      tr('Campaign', 'Chiến dịch'),
+                      () => _open(const CampaignScreen()),
+                    ),
                     FutureBuilder(
                       future: _daily,
                       builder: (context, snapshot) {
@@ -221,27 +240,45 @@ class _HomeScreenState extends State<HomeScreen> {
                         final best = record.best(DailyChallenge.today().key);
                         final streak = record.streak(DateTime.now());
                         return option(
-                          'Daily challenge',
+                          tr('Daily challenge', 'Thử thách hằng ngày'),
                           () => _startDaily(record),
                           subtitle: best == null
                               ? (streak > 0
-                                    ? 'New battle today · streak $streak'
-                                    : 'A new battle every day')
-                              : 'Won in $best days · streak $streak',
+                                    ? tr(
+                                        'New battle today · streak $streak',
+                                        'Trận mới hôm nay · chuỗi $streak',
+                                      )
+                                    : tr(
+                                        'A new battle every day',
+                                        'Mỗi ngày một trận mới',
+                                      ))
+                              : tr(
+                                  'Won in $best days · streak $streak',
+                                  'Thắng trong $best ngày · chuỗi $streak',
+                                ),
                         );
                       },
                     ),
-                    option('Skirmish', () => _randomBattle(vsComputer: true)),
                     option(
-                      '2 players, one device',
+                      tr('Skirmish', 'Giao tranh'),
+                      () => _randomBattle(vsComputer: true),
+                    ),
+                    option(
+                      tr('2 players, one device', '2 người, chung một máy'),
                       () => _randomBattle(vsComputer: false),
                     ),
-                    option('Map editor', () => _open(const MyMapsScreen())),
                     option(
-                      'Achievements',
+                      tr('Map editor', 'Tạo bản đồ'),
+                      () => _open(const MyMapsScreen()),
+                    ),
+                    option(
+                      tr('Achievements', 'Thành tích'),
                       () => _open(const AchievementsScreen()),
                     ),
-                    option('How to play', () => _open(const HowToPlayScreen())),
+                    option(
+                      tr('How to play', 'Cách chơi'),
+                      () => _open(const HowToPlayScreen()),
+                    ),
                   ],
                 ),
               ),

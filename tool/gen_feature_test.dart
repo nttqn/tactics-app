@@ -49,10 +49,12 @@ class _ArmiesPainter extends CustomPainter {
 void main() {
   testWidgets('render the feature graphic', (tester) async {
     // Tests fall back to a placeholder font unless the real one is loaded.
-    final font = FontLoader(displayFont)
+    final font = FontLoader(titleFont)
       ..addFont(
         Future.value(
-          ByteData.sublistView(File('assets/fonts/Cinzel.ttf').readAsBytesSync()),
+          ByteData.sublistView(
+            File('assets/fonts/Cinzel.ttf').readAsBytesSync(),
+          ),
         ),
       );
     await font.load();
@@ -80,7 +82,7 @@ void main() {
                   child: Text(
                     'MARCHLORDS',
                     style: TextStyle(
-                      fontFamily: displayFont,
+                      fontFamily: titleFont,
                       fontSize: 104,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 6,
@@ -94,7 +96,7 @@ void main() {
                   child: Text(
                     'MEDIEVAL TURN-BASED TACTICS',
                     style: TextStyle(
-                      fontFamily: displayFont,
+                      fontFamily: titleFont,
                       fontSize: 30,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 4,

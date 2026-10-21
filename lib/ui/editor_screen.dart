@@ -7,6 +7,7 @@ import '../editor/map_store.dart';
 import '../game/board_art.dart';
 import 'art_icon.dart';
 import 'game_screen.dart';
+import '../l10n.dart';
 
 /// Shows why [map] cannot be played yet. Returns true when it can.
 Future<bool> checkPlayable(BuildContext context, EditableMap map) async {
@@ -15,12 +16,12 @@ Future<bool> checkPlayable(BuildContext context, EditableMap map) async {
   await showDialog<void>(
     context: context,
     builder: (dialog) => AlertDialog(
-      title: const Text('Not ready to play'),
+      title: Text(tr('Not ready to play', 'Chưa chơi được')),
       content: Text(problems.join('\n')),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(dialog).pop(),
-          child: const Text('OK'),
+          child: Text(tr('OK', 'OK')),
         ),
       ],
     ),
@@ -91,7 +92,7 @@ class _EditorScreenState extends State<EditorScreen> {
     final name = await showDialog<String>(
       context: context,
       builder: (dialog) => AlertDialog(
-        title: const Text('Map name'),
+        title: Text(tr('Map name', 'Tên bản đồ')),
         content: TextField(
           controller: field,
           autofocus: true,
@@ -101,7 +102,7 @@ class _EditorScreenState extends State<EditorScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialog).pop(field.text),
-            child: const Text('OK'),
+            child: Text(tr('OK', 'OK')),
           ),
         ],
       ),
@@ -128,12 +129,12 @@ class _EditorScreenState extends State<EditorScreen> {
         title: Text(_map.name),
         actions: [
           IconButton(
-            tooltip: 'Rename',
+            tooltip: tr('Rename', 'Đổi tên'),
             icon: const Icon(Icons.edit),
             onPressed: _rename,
           ),
           IconButton(
-            tooltip: 'Play test (2 players)',
+            tooltip: tr('Play test (2 players)', 'Chơi thử (2 người)'),
             icon: const Icon(Icons.play_arrow),
             onPressed: _playTest,
           ),
@@ -190,13 +191,16 @@ class _EditorScreenState extends State<EditorScreen> {
       child: Wrap(
         alignment: WrapAlignment.center,
         children: [
-          side('Blue', 0, playerColors[0]),
-          side('Red', 1, playerColors[1]),
-          side('Neutral', null, const Color(0xFFB8B2A7)),
+          side(playerName(0), 0, playerColors[0]),
+          side(playerName(1), 1, playerColors[1]),
+          side(tr('Neutral', 'Trung lập'), null, const Color(0xFFB8B2A7)),
           FilterChip(
             visualDensity: VisualDensity.compact,
-            label: const Text('Mirror'),
-            tooltip: 'Copy every change to the other side for the other player',
+            label: Text(tr('Mirror', 'Đối xứng')),
+            tooltip: tr(
+              'Copy every change to the other side for the other player',
+              'Chép mọi thay đổi sang phía bên kia cho người chơi kia',
+            ),
             selected: _mirror,
             onSelected: (v) => setState(() => _mirror = v),
           ),
@@ -216,7 +220,10 @@ class _EditorScreenState extends State<EditorScreen> {
             children: [
               for (final tool in _tools)
                 Tooltip(
-                  message: tool.terrain?.name ?? tool.unit?.name ?? 'Erase',
+                  message:
+                      tool.terrain?.label ??
+                      tool.unit?.label ??
+                      tr('Erase', 'Xóa'),
                   child: InkWell(
                     onTap: () => setState(() => _tool = tool),
                     child: Container(

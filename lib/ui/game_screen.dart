@@ -17,12 +17,7 @@ import '../services/ads_service.dart';
 import '../services/save_service.dart';
 import '../services/settings.dart';
 import '../services/sound_service.dart';
-
-const _playerNames = ['Blue', 'Red'];
-
-extension on UnitType {
-  String get label => name[0].toUpperCase() + name.substring(1);
-}
+import '../l10n.dart';
 
 /// A full match: status bar, board and a context panel for the current
 /// selection. Two players share the device.
@@ -152,7 +147,9 @@ class _GameScreenState extends State<GameScreen> {
     for (final a in AchievementService.instance.justUnlocked.value) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Achievement unlocked: ${a.title}'),
+          content: Text(
+            tr('Achievement unlocked: ', 'Đạt thành tích: ') + a.name,
+          ),
           duration: const Duration(seconds: 2),
         ),
       );
@@ -189,16 +186,16 @@ class _GameScreenState extends State<GameScreen> {
     final use = await showDialog<bool>(
       context: context,
       builder: (dialog) => AlertDialog(
-        title: Text(commander.power),
-        content: Text('${commander.title}: ${commander.description}'),
+        title: Text(commander.powerName),
+        content: Text('${commander.displayName}: ${commander.powerText}'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialog).pop(false),
-            child: const Text('Not now'),
+            child: Text(tr('Not now', 'Để sau')),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialog).pop(true),
-            child: const Text('Unleash'),
+            child: Text(tr('Unleash', 'Tung chiêu')),
           ),
         ],
       ),
@@ -278,35 +275,66 @@ class _GameScreenState extends State<GameScreen> {
     if (s.winner != null || c.aiTurn) return null;
     switch (c.phase) {
       case Phase.moving:
-        return 'Blue tiles show where this unit can go; red marks enemies '
-            'it could strike. Tap a blue tile. A grey village is a good goal.';
+        return tr(
+          'Blue tiles show where this unit can go; red marks enemies '
+              'it could strike. Tap a blue tile. A grey village is a good goal.',
+          'Ô xanh là nơi quân này đi được; ô đỏ là địch nó có thể đánh. '
+              'Chạm một ô xanh. Ngôi làng xám là mục tiêu tốt.',
+        );
       case Phase.menu:
         if (c.canCapture) {
-          return 'Capture claims this building. It takes two turns, and '
-              'every building you own pays gold each day.';
+          return tr(
+            'Capture claims this building. It takes two turns, and '
+                'every building you own pays gold each day.',
+            'Chiếm để lấy công trình này. Mất hai lượt, và mỗi công trình '
+                'của bạn nộp vàng mỗi ngày.',
+          );
         }
         return c.targets.isNotEmpty
-            ? 'Attack strikes an enemy in reach. Wait ends the move here.'
-            : 'Wait ends the move here. Stop on a building to capture it, '
-                  'or beside an enemy to attack.';
+            ? tr(
+                'Attack strikes an enemy in reach. Wait ends the move here.',
+                'Tấn công đánh địch trong tầm. Chờ là dừng nước đi tại đây.',
+              )
+            : tr(
+                'Wait ends the move here. Stop on a building to capture it, '
+                    'or beside an enemy to attack.',
+                'Chờ là dừng nước đi tại đây. Dừng trên công trình để chiếm, '
+                    'hoặc cạnh địch để tấn công.',
+              );
       case Phase.targeting:
-        return 'The panel shows the damage you deal and take back. '
-            'Forests, mountains and buildings protect whoever stands there.';
+        return tr(
+          'The panel shows the damage you deal and take back. '
+              'Forests, mountains and buildings protect whoever stands there.',
+          'Bảng dưới cho biết sát thương bạn gây ra và nhận lại. '
+              'Rừng, núi và công trình che chắn cho quân đứng trên đó.',
+        );
       case Phase.building:
-        return 'Spend gold to recruit. A new unit can act from your next '
-            'turn.';
+        return tr(
+          'Spend gold to recruit. A new unit can act from your next turn.',
+          'Dùng vàng để chiêu mộ. Quân mới hành động được từ lượt sau.',
+        );
       case Phase.idle:
         final mine = s.unitsOf(s.currentPlayer);
         if (s.turn == 1 && mine.every((u) => !u.acted)) {
-          return 'Welcome, commander. Tap one of your blue shields to give '
-              'it orders.';
+          return tr(
+            'Welcome, commander. Tap one of your blue units to give it orders.',
+            'Chào chỉ huy. Chạm một quân xanh của bạn để ra lệnh.',
+          );
         }
         if (mine.any((u) => !u.acted)) {
-          return 'Each unit acts once per turn. Tap another shield, or '
-              'your striped tent to recruit.';
+          return tr(
+            'Each unit acts once per turn. Tap another unit, or your striped '
+                'tent to recruit.',
+            'Mỗi quân hành động một lần mỗi lượt. Chạm quân khác, hoặc lều '
+                'sọc của bạn để chiêu mộ.',
+          );
         }
-        return 'Press End turn when you are done. Win by capturing the red '
-            'castle or defeating every red unit.';
+        return tr(
+          'Press End turn when you are done. Win by capturing the red '
+              'castle or defeating every red unit.',
+          'Xong thì bấm Hết lượt. Thắng bằng cách chiếm lâu đài đỏ '
+              'hoặc tiêu diệt mọi quân đỏ.',
+        );
     }
   }
 
@@ -354,7 +382,7 @@ class _GameScreenState extends State<GameScreen> {
                     backgroundColor: const Color(0x33FFFFFF),
                   ),
                   Text(
-                    commander.title[0],
+                    commander.shortName[0],
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: ready ? const Color(0xFFFFD54F) : null,
@@ -369,7 +397,7 @@ class _GameScreenState extends State<GameScreen> {
         child: Tooltip(
           message: commander == null
               ? ''
-              : '${commander.title} · ${commander.power}: '
+              : '${commander.displayName} · ${commander.powerName}: '
                     '${s.charge[player]}%',
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -396,13 +424,28 @@ class _GameScreenState extends State<GameScreen> {
                 child: Text(
                   s.winner != null
                       ? widget.aiLevel == null
-                            ? '${_playerNames[s.winner!]} wins'
+                            ? tr(
+                                '${playerName(s.winner!)} wins',
+                                '${playerName(s.winner!)} thắng',
+                              )
                             : _playerWon
-                            ? 'Victory on day ${s.turn}'
-                            : 'Defeated on day ${s.turn}'
+                            ? tr(
+                                'Victory on day ${s.turn}',
+                                'Chiến thắng ngày ${s.turn}',
+                              )
+                            : tr(
+                                'Defeated on day ${s.turn}',
+                                'Thất bại ngày ${s.turn}',
+                              )
                       : _controller.aiTurn
-                      ? 'Day ${s.turn} · ${_playerNames[1]} is moving…'
-                      : 'Day ${s.turn} · ${_playerNames[s.currentPlayer]} to move',
+                      ? tr(
+                          'Day ${s.turn} · ${playerName(1)} is moving…',
+                          'Ngày ${s.turn} · ${playerName(1)} đang đi…',
+                        )
+                      : tr(
+                          'Day ${s.turn} · ${playerName(s.currentPlayer)} to move',
+                          'Ngày ${s.turn} · lượt ${playerName(s.currentPlayer)}',
+                        ),
                   style: TextStyle(
                     fontFamily: displayFont,
                     fontSize: 16,
@@ -419,7 +462,7 @@ class _GameScreenState extends State<GameScreen> {
           ),
           funds(1),
           IconButton(
-            tooltip: 'Pause',
+            tooltip: tr('Pause', 'Tạm dừng'),
             icon: const Icon(Icons.pause),
             onPressed: _controller.togglePause,
           ),
@@ -459,7 +502,14 @@ class _GameScreenState extends State<GameScreen> {
       reward();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('The ad did not finish, so no reward.')),
+        SnackBar(
+          content: Text(
+            tr(
+              'The ad did not finish, so no reward.',
+              'Quảng cáo chưa xem hết nên không có thưởng.',
+            ),
+          ),
+        ),
       );
     }
   }
@@ -470,23 +520,48 @@ class _GameScreenState extends State<GameScreen> {
       case UnitAction():
         final unit = s.unitById(action.unitId)!;
         final moved = action.to != unit.pos;
+        final name = unit.type.label;
         final where = moved
-            ? 'Move your ${unit.type.label} to the marked tile'
-            : 'Keep your ${unit.type.label} where it is';
+            ? tr(
+                'Move your $name to the marked tile',
+                'Đưa $name tới ô được đánh dấu',
+              )
+            : tr('Keep your $name where it is', 'Giữ $name tại chỗ');
         final target = action.target == null ? null : s.unitAt(action.target!);
         return switch (action.kind) {
-          ActionKind.attack =>
+          ActionKind.attack => tr(
             'Hint: $where and attack the ${target!.type.label}.',
-          ActionKind.heal => 'Hint: $where and heal the ${target!.type.label}.',
-          ActionKind.capture => 'Hint: $where and capture the building.',
-          ActionKind.wait => 'Hint: $where and wait.',
+            'Gợi ý: $where rồi tấn công ${target.type.label}.',
+          ),
+          ActionKind.heal => tr(
+            'Hint: $where and heal the ${target!.type.label}.',
+            'Gợi ý: $where rồi hồi máu cho ${target.type.label}.',
+          ),
+          ActionKind.capture => tr(
+            'Hint: $where and capture the building.',
+            'Gợi ý: $where rồi chiếm công trình.',
+          ),
+          ActionKind.wait => tr(
+            'Hint: $where and wait.',
+            'Gợi ý: $where rồi chờ.',
+          ),
         };
       case BuildAction():
-        return 'Hint: recruit a ${action.type.label} at your tent.';
+        return tr(
+          'Hint: recruit a ${action.type.label} at your tent.',
+          'Gợi ý: chiêu mộ ${action.type.label} tại lều trại.',
+        );
       case UsePowerAction():
-        return 'Hint: unleash ${s.commanders[s.currentPlayer]!.power} now.';
+        final power = s.commanders[s.currentPlayer]!.powerName;
+        return tr(
+          'Hint: unleash $power now.',
+          'Gợi ý: tung chiêu $power ngay.',
+        );
       case EndTurnAction():
-        return 'Hint: nothing more worth doing. End your turn.';
+        return tr(
+          'Hint: nothing more worth doing. End your turn.',
+          'Gợi ý: không còn nước nào đáng đi. Hãy hết lượt.',
+        );
     }
   }
 
@@ -499,28 +574,33 @@ class _GameScreenState extends State<GameScreen> {
       final next = _playerWon ? widget.nextBuilder : null;
       children = [
         if (next != null)
-          _button('Next', () {
+          _button(tr('Next', 'Màn tiếp'), () {
             AdsService.instance.maybeShowInterstitial();
             Navigator.of(
               context,
             ).pushReplacement(MaterialPageRoute<void>(builder: next));
           }),
-        _button('Play again', () {
+        _button(tr('Play again', 'Chơi lại'), () {
           AdsService.instance.maybeShowInterstitial();
           c.restart();
         }, primary: next == null),
-        _button('Menu', () {
+        _button(tr('Menu', 'Về menu'), () {
           AdsService.instance.maybeShowInterstitial();
           Navigator.of(context).pop();
         }, primary: false),
       ];
     } else if (c.aiTurn) {
       children = [
-        _hint('The enemy is taking its turn.'),
+        _hint(
+          tr('The enemy is taking its turn.', 'Địch đang đi lượt của chúng.'),
+        ),
         ValueListenableBuilder(
           valueListenable: Settings.speed,
-          builder: (context, speed, _) =>
-              _button('Speed x$speed', Settings.cycleSpeed, primary: false),
+          builder: (context, speed, _) => _button(
+            tr('Speed x$speed', 'Tốc độ x$speed'),
+            Settings.cycleSpeed,
+            primary: false,
+          ),
         ),
       ];
     } else {
@@ -529,42 +609,59 @@ class _GameScreenState extends State<GameScreen> {
           children = [
             _hint(
               c.hintAction == null
-                  ? 'Tap one of your units, or your tent to recruit.'
+                  ? tr(
+                      'Tap one of your units, or your tent to recruit.',
+                      'Chạm quân của bạn, hoặc lều trại để chiêu mộ.',
+                    )
                   : _describeHint(c.hintAction!),
             ),
             if (adReady && c.canHint && c.hintAction == null)
-              _button('Hint (ad)', () => _afterAd(c.showHint), primary: false),
+              _button(
+                tr('Hint (ad)', 'Gợi ý (QC)'),
+                () => _afterAd(c.showHint),
+                primary: false,
+              ),
             if (c.canUndo)
-              _button('Undo', c.undo, primary: false)
+              _button(tr('Undo', 'Hoàn tác'), c.undo, primary: false)
             else if (adReady && c.canUndoWithAd)
               _button(
-                'Undo (ad)',
+                tr('Undo (ad)', 'Hoàn tác (QC)'),
                 () => _afterAd(() => c.undo(rewarded: true)),
                 primary: false,
               ),
             if (c.canUsePower)
-              _button(s.commanders[s.currentPlayer]!.power, _confirmPower),
-            _button('End turn', c.endTurn),
+              _button(s.commanders[s.currentPlayer]!.powerName, _confirmPower),
+            _button(tr('End turn', 'Hết lượt'), c.endTurn),
           ];
         case Phase.moving:
           final u = c.selected!;
           children = [
             _hint(
               '${u.type.label}${u.rank > 0 ? ' ${'★' * u.rank}' : ''} · '
-              'HP ${u.displayHp}/10 · Move ${s.moveRange(u)}\n'
-              'Tap a blue tile to move there.',
+              '${tr('HP', 'Máu')} ${u.displayHp}/10 · '
+              '${tr('Move', 'Đi')} ${s.moveRange(u)}\n'
+              '${tr('Tap a blue tile to move there.', 'Chạm ô xanh để đi tới đó.')}',
             ),
-            _button('Cancel', c.cancel, primary: false),
+            _button(tr('Cancel', 'Hủy'), c.cancel, primary: false),
           ];
         case Phase.menu:
           children = [
             if (c.selected!.type.canHeal)
-              _button('Heal', c.healTargets.isEmpty ? null : c.chooseHeal)
+              _button(
+                tr('Heal', 'Hồi máu'),
+                c.healTargets.isEmpty ? null : c.chooseHeal,
+              )
             else
-              _button('Attack', c.targets.isEmpty ? null : c.chooseAttack),
-            _button('Capture', c.canCapture ? c.chooseCapture : null),
-            _button('Wait', c.chooseWait),
-            _button('Back', c.cancel, primary: false),
+              _button(
+                tr('Attack', 'Tấn công'),
+                c.targets.isEmpty ? null : c.chooseAttack,
+              ),
+            _button(
+              tr('Capture', 'Chiếm'),
+              c.canCapture ? c.chooseCapture : null,
+            ),
+            _button(tr('Wait', 'Chờ'), c.chooseWait),
+            _button(tr('Back', 'Quay lại'), c.cancel, primary: false),
           ];
         case Phase.targeting:
           final f = c.forecast;
@@ -573,18 +670,36 @@ class _GameScreenState extends State<GameScreen> {
             _hint(
               c.healing
                   ? c.target == null
-                        ? 'Tap a wounded ally marked in green.'
-                        : 'Restore up to ${formatHp(UnitType.healAmount)} HP.'
+                        ? tr(
+                            'Tap a wounded ally marked in green.',
+                            'Chạm đồng đội bị thương có viền xanh lá.',
+                          )
+                        : tr(
+                            'Restore up to ${formatHp(UnitType.healAmount)} HP.',
+                            'Hồi tối đa ${formatHp(UnitType.healAmount)} máu.',
+                          )
                   : f == null
-                  ? 'Tap an enemy marked in red.'
+                  ? tr('Tap an enemy marked in red.', 'Chạm quân địch viền đỏ.')
                   : lethal
-                  ? 'Deal ${formatHp(f.damage)} · defeats the enemy'
-                  : 'Deal ${formatHp(f.damage)} · take ${formatHp(f.counter)}',
+                  ? tr(
+                      'Deal ${formatHp(f.damage)} · defeats the enemy',
+                      'Gây ${formatHp(f.damage)} · hạ gục địch',
+                    )
+                  : tr(
+                      'Deal ${formatHp(f.damage)} · take ${formatHp(f.counter)}',
+                      'Gây ${formatHp(f.damage)} · nhận ${formatHp(f.counter)}',
+                    ),
             ),
             c.healing
-                ? _button('Heal', c.target == null ? null : c.confirmAttack)
-                : _button('Attack', f == null ? null : c.confirmAttack),
-            _button('Back', c.cancel, primary: false),
+                ? _button(
+                    tr('Heal', 'Hồi máu'),
+                    c.target == null ? null : c.confirmAttack,
+                  )
+                : _button(
+                    tr('Attack', 'Tấn công'),
+                    f == null ? null : c.confirmAttack,
+                  ),
+            _button(tr('Back', 'Quay lại'), c.cancel, primary: false),
           ];
         case Phase.building:
           return _buildPanel();
@@ -617,7 +732,7 @@ class _GameScreenState extends State<GameScreen> {
                   Text(type.label),
                   Text('${type.cost}g'),
                   Text(
-                    'Move ${type.move} · Range '
+                    '${tr('Move', 'Đi')} ${type.move} · ${tr('Range', 'Tầm')} '
                     '${type.minRange == type.maxRange ? type.maxRange : '${type.minRange}-${type.maxRange}'}',
                     style: const TextStyle(fontSize: 11),
                   ),
@@ -625,7 +740,7 @@ class _GameScreenState extends State<GameScreen> {
               ),
             ),
           ),
-        OutlinedButton(onPressed: c.cancel, child: const Text('Close')),
+        OutlinedButton(onPressed: c.cancel, child: Text(tr('Close', 'Đóng'))),
       ],
     );
   }
@@ -658,7 +773,10 @@ class _GameScreenState extends State<GameScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  '${_playerNames[player]}\'s turn',
+                  tr(
+                    '${playerName(player)}\'s turn',
+                    'Lượt của ${playerName(player)}',
+                  ),
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
@@ -666,7 +784,12 @@ class _GameScreenState extends State<GameScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                const Text('Pass the device, then tap to continue.'),
+                Text(
+                  tr(
+                    'Pass the device, then tap to continue.',
+                    'Chuyển máy cho người kia, rồi chạm để tiếp tục.',
+                  ),
+                ),
               ],
             ),
           ),
@@ -683,8 +806,8 @@ class _GameScreenState extends State<GameScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'Paused',
+              Text(
+                tr('Paused', 'Tạm dừng'),
                 style: TextStyle(
                   fontFamily: displayFont,
                   fontSize: 30,
@@ -695,7 +818,7 @@ class _GameScreenState extends State<GameScreen> {
               const SizedBox(height: 24),
               FilledButton(
                 onPressed: _controller.togglePause,
-                child: const Text('Resume'),
+                child: Text(tr('Resume', 'Tiếp tục')),
               ),
               const SizedBox(height: 12),
               OutlinedButton(
@@ -703,7 +826,7 @@ class _GameScreenState extends State<GameScreen> {
                   SaveService.clear();
                   _controller.restart();
                 },
-                child: const Text('Restart'),
+                child: Text(tr('Restart', 'Chơi lại')),
               ),
               const SizedBox(height: 12),
               TextButton(
@@ -711,7 +834,7 @@ class _GameScreenState extends State<GameScreen> {
                   AdsService.instance.maybeShowInterstitial();
                   Navigator.of(context).pop();
                 },
-                child: const Text('Quit to menu'),
+                child: Text(tr('Quit to menu', 'Về menu')),
               ),
               const SizedBox(height: 12),
               Row(
@@ -721,14 +844,14 @@ class _GameScreenState extends State<GameScreen> {
                     SoundService.instance.musicEnabled,
                     Icons.music_note,
                     Icons.music_off,
-                    'Music',
+                    tr('Music', 'Nhạc'),
                     SoundService.instance.toggleMusic,
                   ),
                   _soundToggle(
                     SoundService.instance.sfxEnabled,
                     Icons.volume_up,
                     Icons.volume_off,
-                    'Sound effects',
+                    tr('Sound effects', 'Hiệu ứng âm thanh'),
                     SoundService.instance.toggleSfx,
                   ),
                 ],
