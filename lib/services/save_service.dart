@@ -16,6 +16,9 @@ class SavedMatch {
   /// Campaign mission index, or null outside the campaign.
   final int? mission;
 
+  /// Date key of a daily challenge, or null for any other battle.
+  final String? daily;
+
   /// Shown on the Continue button, e.g. "Mission 3 · Twin Bridges".
   final String label;
 
@@ -24,6 +27,7 @@ class SavedMatch {
     required this.state,
     required this.level,
     required this.mission,
+    this.daily,
     required this.label,
   });
 }
@@ -42,6 +46,7 @@ class SaveService {
         'state': match.state.toSave(),
         'level': match.level?.name,
         'mission': match.mission,
+        'daily': match.daily,
         'label': match.label,
       }),
     );
@@ -61,6 +66,7 @@ class SaveService {
         state: GameState.fromSave(j['state'] as Map<String, dynamic>),
         level: level == null ? null : AiLevel.values.byName(level),
         mission: j['mission'] as int?,
+        daily: j['daily'] as String?,
         label: j['label'] as String,
       );
     } catch (_) {

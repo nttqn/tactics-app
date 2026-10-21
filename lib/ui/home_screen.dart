@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
+import '../campaign/daily.dart';
 import '../campaign/progress.dart';
 import '../core/map_generator.dart';
 import '../services/ads_service.dart';
@@ -11,6 +12,7 @@ import '../services/sound_service.dart';
 import 'achievements_screen.dart';
 import 'battle_setup.dart';
 import 'campaign_screen.dart';
+import 'daily_screen.dart';
 import 'game_screen.dart';
 import 'how_to_play_screen.dart';
 import 'my_maps_screen.dart';
@@ -28,6 +30,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   Future<SavedMatch?> _saved = SaveService.load();
+  Future<DailyRecord> _daily = DailyRecord.load();
   BannerAd? _banner;
   bool _bannerLoaded = false;
 
@@ -65,6 +68,7 @@ class _HomeScreenState extends State<HomeScreen> {
     SoundService.instance.playMenuMusic();
     setState(() {
       _saved = SaveService.load();
+      _daily = DailyRecord.load();
     });
   }
 
@@ -82,8 +86,26 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<void> _startDaily(DailyRecord record) async {
+    final challenge = DailyChallenge.today();
+    if (!await showDailyBriefing(context, record, challenge) || !mounted) {
+      return;
+    }
+    _open(dailyScreen(record, challenge));
+  }
+
   Future<void> _continue(SavedMatch saved) async {
-    if (saved.mission != null) {
+    if (saved.daily != null) {
+      final record = await DailyRecord.load();
+      if (!mounted) return;
+      _open(
+        dailyScreen(
+          record,
+          DailyChallenge.fromKey(saved.daily!),
+          resume: saved,
+        ),
+      );
+    } else if (saved.mission != null) {
       final progress = await Progress.load();
       if (!mounted) return;
       _open(missionScreen(progress, saved.mission!, resume: saved));
@@ -189,6 +211,24 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                     ),
                     option('Campaign', () => _open(const CampaignScreen())),
+                    FutureBuilder(
+                      future: _daily,
+                      builder: (context, snapshot) {
+                        final record = snapshot.data;
+                        if (record == null) return const SizedBox.shrink();
+                        final best = record.best(DailyChallenge.today().key);
+                        final streak = record.streak(DateTime.now());
+                        return option(
+                          'Daily challenge',
+                          () => _startDaily(record),
+                          subtitle: best == null
+                              ? (streak > 0
+                                    ? 'New battle today · streak $streak'
+                                    : 'A new battle every day')
+                              : 'Won in $best days · streak $streak',
+                        );
+                      },
+                    ),
                     option('Skirmish', () => _randomBattle(vsComputer: true)),
                     option(
                       '2 players, one device',

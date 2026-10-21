@@ -35,12 +35,16 @@ class GameScreen extends StatefulWidget {
     this.nextBuilder,
     this.tutorial = false,
     this.missionIndex,
+    this.dailyKey,
     this.resumeFrom,
     this.label = 'Battle',
   });
 
   /// Campaign mission being played, for the save slot.
   final int? missionIndex;
+
+  /// Date key when this is a daily challenge, for the save slot.
+  final String? dailyKey;
 
   /// A saved match to continue instead of starting [mapJson] fresh.
   final GameState? resumeFrom;
@@ -167,6 +171,7 @@ class _GameScreenState extends State<GameScreen> {
           state: s,
           level: widget.aiLevel,
           mission: widget.missionIndex,
+          daily: widget.dailyKey,
           label: widget.label,
         ),
       );

@@ -29,6 +29,11 @@ const achievements = [
     'Win a battle on a map you made.',
   ),
   Achievement('halfway', 'Half the Realm', 'Win campaign mission 10.'),
+  Achievement(
+    'devoted',
+    'Devoted',
+    'Win the daily challenge seven days in a row.',
+  ),
   Achievement('champion', 'Champion', 'Win the whole campaign.'),
   Achievement(
     'flawless',
