@@ -68,17 +68,27 @@ jobs:
           ADMOB_APP_ID: ${{ secrets.ADMOB_APP_ID }}
         run: flutter build appbundle --release
 
+      # Every run's download would otherwise be the same app-release.aab;
+      # the version in the name says which build a file is.
+      - name: Name the outputs after the version
+        run: |
+          v=$(grep '^version:' pubspec.yaml | cut -d' ' -f2 | tr '+' '-')
+          mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-release.apk "dist/marchlords-$v.apk"
+          cp build/app/outputs/bundle/release/app-release.aab "dist/marchlords-$v.aab"
+          echo "VERSION=$v" >> "$GITHUB_ENV"
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: marchlords-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: marchlords-apk-${{ env.VERSION }}
+          path: dist/*.apk
 
       - name: Upload App Bundle artifact
         uses: actions/upload-artifact@v4
         with:
-          name: marchlords-aab
-          path: build/app/outputs/bundle/release/app-release.aab
+          name: marchlords-aab-${{ env.VERSION }}
+          path: dist/*.aab
 
   build-ios:
     runs-on: macos-latest
