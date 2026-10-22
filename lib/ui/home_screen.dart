@@ -8,6 +8,7 @@ import '../campaign/daily.dart';
 import '../campaign/progress.dart';
 import '../core/map_generator.dart';
 import '../services/ads_service.dart';
+import '../services/play_games.dart';
 import '../services/save_service.dart';
 import '../services/sound_service.dart';
 import 'achievements_screen.dart';
@@ -44,6 +45,30 @@ class _HomeScreenState extends State<HomeScreen> {
     // ready, which may already be the case.
     AdsService.instance.ready.addListener(_loadBanner);
     _loadBanner();
+    PlayGames.cloudMerged.addListener(_reload);
+  }
+
+  void _reload() {
+    if (!mounted) return;
+    setState(() {
+      _saved = SaveService.load();
+      _daily = DailyRecord.load();
+      _conquest = Conquest.load();
+    });
+  }
+
+  Future<void> _leaderboards() async {
+    if (await PlayGames.showLeaderboards() || !mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          tr(
+            'Google Play Games is not available right now.',
+            'Google Play Games hiện không khả dụng.',
+          ),
+        ),
+      ),
+    );
   }
 
   void _loadBanner() {
@@ -58,6 +83,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     AdsService.instance.ready.removeListener(_loadBanner);
+    PlayGames.cloudMerged.removeListener(_reload);
     _banner?.dispose();
     super.dispose();
   }
@@ -69,11 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ).push(MaterialPageRoute<void>(builder: (_) => screen));
     if (!mounted) return;
     SoundService.instance.playMenuMusic();
-    setState(() {
-      _saved = SaveService.load();
-      _daily = DailyRecord.load();
-      _conquest = Conquest.load();
-    });
+    _reload();
   }
 
   Future<void> _randomBattle({required bool vsComputer}) async {
@@ -321,6 +343,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       tr('Achievements', 'Thành tích'),
                       () => _open(const AchievementsScreen()),
                     ),
+                    if (PlayGames.available)
+                      option(
+                        tr('Leaderboards', 'Bảng xếp hạng'),
+                        _leaderboards,
+                      ),
                     option(
                       tr('How to play', 'Cách chơi'),
                       () => _open(const HowToPlayScreen()),

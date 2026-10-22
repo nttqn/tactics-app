@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Play Games Services project for Marchlords. Not secret: it ships in every
+     APK. A string resource rather than a bare number in the manifest, so
+     Android hands it over as text. -->
+<resources>
+    <string name="game_services_project_id" translatable="false">894235592797</string>
+</resources>

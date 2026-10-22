@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../l10n.dart';
+import 'play_games.dart';
 
 class Achievement {
   final String id;
@@ -181,6 +182,8 @@ class AchievementService {
     justUnlocked.value = fresh;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setStringList(_key, unlocked.toList());
+    PlayGames.unlocked(fresh.map((a) => a.id));
+    PlayGames.progressChanged();
     return fresh;
   }
 }

@@ -14,6 +14,7 @@ import '../game/board_component.dart';
 import '../game/game_controller.dart';
 import '../game/tactics_game.dart';
 import '../services/achievements.dart';
+import '../services/play_games.dart';
 import '../services/ads_service.dart';
 import '../services/save_service.dart';
 import '../services/settings.dart';
@@ -172,6 +173,7 @@ class _GameScreenState extends State<GameScreen> {
       if (conquest.wins >= 50) 'warmonger',
       if (conquest.wins >= 100) 'legend',
     ]);
+    PlayGames.progressChanged();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import 'l10n.dart';
 import 'services/ads_service.dart';
+import 'services/play_games.dart';
 import 'services/settings.dart';
 import 'services/sound_service.dart';
 import 'ui/home_screen.dart';
@@ -18,6 +19,7 @@ void main() {
   AdsService.instance.initialize();
   Settings.load();
   L10n.load();
+  PlayGames.start();
   runApp(const TacticsApp());
 }
 

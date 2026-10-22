@@ -4,6 +4,7 @@ import '../campaign/campaign.dart';
 import '../campaign/progress.dart';
 import '../core/models.dart';
 import '../services/achievements.dart';
+import '../services/play_games.dart';
 import '../services/save_service.dart';
 import 'battle_setup.dart';
 import 'game_screen.dart';
@@ -33,6 +34,7 @@ Widget missionScreen(
         if (progress.completed >= campaign.length) 'champion',
         if (progress.totalStars == 3 * campaign.length) 'flawless',
       ]);
+      PlayGames.progressChanged();
     },
     nextBuilder: index + 1 < campaign.length
         ? (_) => missionScreen(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/achievements.dart';
+import '../services/play_games.dart';
 import '../l10n.dart';
 
 class AchievementsScreen extends StatefulWidget {
@@ -17,7 +18,17 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
   Widget build(BuildContext context) {
     final unlocked = AchievementService.instance.unlocked;
     return Scaffold(
-      appBar: AppBar(title: Text(tr('Achievements', 'Thành tích'))),
+      appBar: AppBar(
+        title: Text(tr('Achievements', 'Thành tích')),
+        actions: [
+          if (PlayGames.available)
+            IconButton(
+              tooltip: 'Google Play Games',
+              icon: const Icon(Icons.sports_esports),
+              onPressed: PlayGames.showAchievements,
+            ),
+        ],
+      ),
       body: FutureBuilder(
         future: _loaded,
         builder: (context, snapshot) {

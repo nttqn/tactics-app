@@ -148,6 +148,7 @@ void main() {
 
   testWidgets('how to play lists every unit', (tester) async {
     await pumpHome(tester);
+    await tester.ensureVisible(find.text('How to play'));
     await tester.tap(find.text('How to play'));
     await settle(tester);
     await tester.scrollUntilVisible(find.text('Units'), 200);

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../services/play_games.dart';
 import 'editable_map.dart';
 
 /// The player's own maps, saved on the device.
@@ -31,6 +32,7 @@ class MapStore extends ChangeNotifier {
 
   /// Writes the current [maps] (including in-place edits) to storage.
   Future<void> persist() async {
+    PlayGames.progressChanged();
     await _prefs.setStringList(_key, [
       for (final map in maps) jsonEncode(map.toJson()),
     ]);

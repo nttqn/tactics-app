@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../campaign/daily.dart';
 import '../services/achievements.dart';
+import '../services/play_games.dart';
 import '../services/save_service.dart';
 import 'game_screen.dart';
 import '../l10n.dart';
@@ -22,6 +23,7 @@ Widget dailyScreen(
     if (record.streak(DailyChallenge.pacificToday()) >= 7) {
       AchievementService.instance.unlock(['devoted']);
     }
+    PlayGames.progressChanged();
   },
 );
 
