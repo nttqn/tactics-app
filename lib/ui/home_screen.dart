@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
+import '../campaign/conquest.dart';
 import '../campaign/daily.dart';
 import '../campaign/progress.dart';
 import '../core/map_generator.dart';
@@ -32,6 +33,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   Future<SavedMatch?> _saved = SaveService.load();
   Future<DailyRecord> _daily = DailyRecord.load();
+  Future<Conquest> _conquest = Conquest.load();
   BannerAd? _banner;
   bool _bannerLoaded = false;
 
@@ -70,6 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _saved = SaveService.load();
       _daily = DailyRecord.load();
+      _conquest = Conquest.load();
     });
   }
 
@@ -194,6 +197,47 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Container(height: 3, color: goldDark),
                   ),
                   Align(
+                    alignment: Alignment.bottomLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 8, 8, 16),
+                      child: FutureBuilder(
+                        future: _conquest,
+                        builder: (context, snapshot) {
+                          final conquest = snapshot.data;
+                          if (conquest == null) return const SizedBox.shrink();
+                          final next = pointsToNextRank(conquest.points);
+                          return Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                rankTitle(conquest.points),
+                                style: TextStyle(
+                                  fontFamily: displayFont,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: gold,
+                                ),
+                              ),
+                              Text(
+                                next == null
+                                    ? tr(
+                                        '${conquest.points} conquest points',
+                                        '${conquest.points} điểm chinh phạt',
+                                      )
+                                    : tr(
+                                        '${conquest.points} pts · $next to next title',
+                                        '${conquest.points} điểm · còn $next điểm lên hạng',
+                                      ),
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  Align(
                     alignment: Alignment.bottomRight,
                     child: Padding(
                       padding: const EdgeInsets.all(8),
@@ -238,7 +282,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         final record = snapshot.data;
                         if (record == null) return const SizedBox.shrink();
                         final best = record.best(DailyChallenge.today().key);
-                        final streak = record.streak(DateTime.now());
+                        final streak = record.streak(
+                          DailyChallenge.pacificToday(),
+                        );
                         return option(
                           tr('Daily challenge', 'Thử thách hằng ngày'),
                           () => _startDaily(record),

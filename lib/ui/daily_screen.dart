@@ -19,7 +19,7 @@ Widget dailyScreen(
   label: '${tr('Daily challenge', 'Thử thách hằng ngày')} · ${challenge.key}',
   onPlayerWin: (days) async {
     await record.recordWin(challenge.key, days);
-    if (record.streak(DateTime.now()) >= 7) {
+    if (record.streak(DailyChallenge.pacificToday()) >= 7) {
       AchievementService.instance.unlock(['devoted']);
     }
   },
@@ -32,7 +32,7 @@ Future<bool> showDailyBriefing(
   DailyChallenge challenge,
 ) async {
   final best = record.best(challenge.key);
-  final streak = record.streak(DateTime.now());
+  final streak = record.streak(DailyChallenge.pacificToday());
   final spec = challenge.spec;
   final lines = [
     tr(

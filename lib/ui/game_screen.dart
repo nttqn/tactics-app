@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'theme.dart';
 
 import '../ai/ai_player.dart';
+import '../campaign/conquest.dart';
 import '../core/actions.dart';
 import '../core/game_state.dart';
 import '../core/models.dart';
@@ -156,8 +157,40 @@ class _GameScreenState extends State<GameScreen> {
     }
   }
 
+  /// Conquest points, lifetime wins and the achievements that count them.
+  Future<void> _recordVictory() async {
+    final s = _controller.state;
+    final conquest = await Conquest.load();
+    final earned = await conquest.recordWin(
+      level: widget.aiLevel!,
+      fog: s.fog,
+      days: s.turn,
+      daily: widget.dailyKey != null,
+    );
+    AchievementService.instance.unlock([
+      if (conquest.wins >= 10) 'seasoned',
+      if (conquest.wins >= 50) 'warmonger',
+      if (conquest.wins >= 100) 'legend',
+    ]);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          tr(
+            '+$earned conquest points · ${rankTitle(conquest.points)}',
+            '+$earned điểm chinh phạt · ${rankTitle(conquest.points)}',
+          ),
+        ),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
   void _onEvents(List<GameEvent> events) {
     _trackAchievements(events);
+    if (widget.aiLevel != null && events.any((e) => e is GameOver)) {
+      if (_controller.state.winner == 0) _recordVictory();
+    }
     final s = _controller.state;
     if (s.winner != null) {
       SaveService.clear();

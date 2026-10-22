@@ -114,6 +114,27 @@ const achievements = [
     'Thắng thử thách hằng ngày bảy ngày liên tiếp.',
   ),
   Achievement(
+    'seasoned',
+    'Seasoned',
+    'Win 10 battles against the computer.',
+    'Dày Dạn',
+    'Thắng 10 trận trước máy.',
+  ),
+  Achievement(
+    'warmonger',
+    'Warmonger',
+    'Win 50 battles against the computer.',
+    'Chinh Chiến',
+    'Thắng 50 trận trước máy.',
+  ),
+  Achievement(
+    'legend',
+    'Legend of the March',
+    'Win 100 battles against the computer.',
+    'Huyền Thoại Biên Ải',
+    'Thắng 100 trận trước máy.',
+  ),
+  Achievement(
     'champion',
     'Champion',
     'Win the whole campaign.',

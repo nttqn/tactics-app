@@ -18,7 +18,27 @@ class DailyChallenge {
     );
   }
 
-  factory DailyChallenge.today() => DailyChallenge.forDate(DateTime.now());
+  factory DailyChallenge.today() => DailyChallenge.forDate(pacificToday());
+
+  /// Today's date in US Pacific time. Google Play Games resets its daily
+  /// leaderboards at Pacific midnight, so the challenge changes then too
+  /// (mid-afternoon in Vietnam) and a day's scores land on the same board.
+  static DateTime pacificToday([DateTime? now]) {
+    final utc = (now ?? DateTime.now()).toUtc();
+    // US daylight time: second Sunday of March 02:00 PST (10:00 UTC) to the
+    // first Sunday of November 02:00 PDT (09:00 UTC).
+    DateTime nthSunday(int month, int n) {
+      final first = DateTime.utc(utc.year, month, 1);
+      final offset = (DateTime.sunday - first.weekday) % 7;
+      return first.add(Duration(days: offset + 7 * (n - 1)));
+    }
+
+    final dstStart = nthSunday(3, 2).add(const Duration(hours: 10));
+    final dstEnd = nthSunday(11, 1).add(const Duration(hours: 9));
+    final dst = !utc.isBefore(dstStart) && utc.isBefore(dstEnd);
+    final pacific = utc.subtract(Duration(hours: dst ? 7 : 8));
+    return DateTime(pacific.year, pacific.month, pacific.day);
+  }
 
   /// The challenge stored under [key] (yyyy-mm-dd).
   factory DailyChallenge.fromKey(String key) {
