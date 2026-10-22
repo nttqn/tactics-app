@@ -30,11 +30,12 @@ class AdsService {
       ? 'ca-app-pub-9078637596840810/6049048302'
       : 'ca-app-pub-9078637596840810/5301360260';
 
-  /// Google's public test units until Marchlords' own rewarded units exist.
+  /// Android has Marchlords' own rewarded unit; iOS (no longer published)
+  /// keeps Google's public test unit.
   static String get rewardedAdUnitId =>
       defaultTargetPlatform == TargetPlatform.iOS
       ? 'ca-app-pub-3940256099942544/1712485313'
-      : 'ca-app-pub-3940256099942544/5224354917';
+      : 'ca-app-pub-9078637596840810/2844342024';
 
   RewardedAd? _rewardedAd;
 
