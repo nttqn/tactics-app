@@ -24,9 +24,9 @@ class PlayGames {
   // From Play Console. The Play Games project id they belong to is in
   // android/app/src/main/res/values/games_ids.xml. Empty = not created yet,
   // and that board or achievement is skipped.
-  static const _dailyBoard = '';
-  static const _conquestBoard = '';
-  static const _starsBoard = '';
+  static const _dailyBoard = 'CgkI3ZDhpIMaEAIQAg';
+  static const _conquestBoard = 'CgkI3ZDhpIMaEAIQAw';
+  static const _starsBoard = 'CgkI3ZDhpIMaEAIQBA';
 
   static const _achievementIds = <String, String>{
     'first_blood': '',
